@@ -1,4 +1,4 @@
-module.exports	= function( actionName, options ) {
+module.exports	= function( actionName, options, appInstance ) {
 	var _config	= {
 		"public"	: false
 	};

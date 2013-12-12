@@ -1,4 +1,6 @@
-module.exports	= function( controllerName, options ) {
+var actionInstance		= require('./action');
+
+module.exports	= function( controllerName, options, appInstance ) {
 	var _config	= {};
 	var _views	= {};
 	var _actions	= {};
@@ -7,26 +9,28 @@ module.exports	= function( controllerName, options ) {
 	// options._onAction( actionName, controllerObject );
 	// options._noAction( actionName, controllerObject );
 	// console.log(configObject);
-	var controllerPublic	= {
+	var controllerObject	= {
 		getView	: function( viewName ) {
-			if( _functions.isValidIdentifier( viewName ) && viewName in _views ) {
+			if( appInstance._functions.isValidIdentifier( viewName ) && viewName in _views ) {
 				return _views[viewName];
 			}
 			return null;
 		},
 		getAction	: function( actionName ) {
-			if( _functions.isValidIdentifier( actionName ) && actionName in _actions ) {
+			if( appInstance._functions.isValidIdentifier( actionName ) && actionName in _actions ) {
 				return _actions[actionName];
 			}
 			return null;
 		},
 		actionExists	: function( actionName ) {
-			return ( _functions.isValidIdentifier( actionName ) && actionName in _actions );
+			return ( appInstance._functions.isValidIdentifier( actionName ) && actionName in _actions );
 		},
 		addAction	: function( actionName, options ) {
-			if( _functions.isValidIdentifier( actionName ) && !controllerObject.actionExists( actionName ) ) {
-				_actions[actionName]	= new actionInstance( actionName, options );
-				return true;
+			console.log('##actionAdding',actionName);
+			if( appInstance._functions.isValidIdentifier( actionName ) && !controllerObject.actionExists( actionName ) ) {
+				console.log('##actionAdded',actionName);
+				_actions[actionName]	= new actionInstance( actionName, options, appInstance );
+				return _actions[actionName];
 			}
 			return false;
 		},
@@ -38,4 +42,5 @@ module.exports	= function( controllerName, options ) {
 			return false;
 		}
 	};
+	return controllerObject;
 };

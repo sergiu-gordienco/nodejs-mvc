@@ -25,31 +25,25 @@ var serverObject	= http.createServer(function( request, response ) {
 // });
 // server.listen(1337, '127.0.0.1');
 
-var _functions	= {
-	isValidIdentifier	: function( id ) {
-		return ( typeof(id) == "string" && id.match(/^[a-z][a-z0-9\-]+[a-z0-9]$/i) );
-	}
+var controllerInstance	= require('./objects/controller');
+var appInstance			= {
+	_functions	: {}
 };
 
-var actionInstance		= require('./objects/action');
-
-var controllerInstance	= require('./objects/controller');
-
-
-module.exports	= {
+var moduleObject	= {
 	controllerExists	: function() {
-		return ( _functions.isValidIdentifier(arguments[0]) && arguments[0] in configObject.controllers );
+		return ( moduleObject._functions.isValidIdentifier(arguments[0]) && arguments[0] in configObject.controllers );
 	},
 	addController	: function( controllerName, options ) {
-		if( _functions.isValidIdentifier(controllerName) )
-		if( !this.controllerExists(controllerName) ) {
-			configObject.controllers[controllerName]	= new controllerInstance( controllerName, options );
-			return true;
+		if( moduleObject._functions.isValidIdentifier(controllerName) )
+		if( !moduleObject.controllerExists(controllerName) ) {
+			configObject.controllers[controllerName]	= new controllerInstance( controllerName, options, appInstance );
+			return configObject.controllers[controllerName];
 		}
 		return false;
 	},
 	removeController	: function( controllerName ) {
-		if( _functions.isValidIdentifier( controllerName ) && this.controllerExists( controllerName ) ) {
+		if( _functions.isValidIdentifier( controllerName ) && moduleObject.controllerExists( controllerName ) ) {
 			delete configObject.controllers[controllerName];
 			return true;
 		}
@@ -60,3 +54,14 @@ module.exports	= {
 	}
 	// onHttpState( code [function], [vars] )
 };
+
+moduleObject._functions	= {
+	isValidIdentifier	: function( id ) {
+		return ( typeof(id) == "string" && id.match(/^[a-z][a-z0-9\-]+[a-z0-9]$/i) );
+	}
+};
+
+appInstance._functions.isValidIdentifier	= moduleObject._functions.isValidIdentifier;
+appInstance.structure						= moduleObject;
+
+module.exports	= moduleObject;
