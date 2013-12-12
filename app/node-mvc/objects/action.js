@@ -1,7 +1,7 @@
-module.exports	= function( actionName, controllerName, options, appInstance ) {
+module.exports	= function( actionName, controller, options, appInstance ) {
 	var _config	= {
 		"public"	: false,
-		"capture"	: function( request, controllerName, actionName, appInstance ) {
+		"capture"	: function( request, appInstance, controller, action ) {
 
 		}
 	};
@@ -15,13 +15,19 @@ module.exports	= function( actionName, controllerName, options, appInstance ) {
 		}
 	}
 	var actionObject	= {
+		getController	: function() {
+			return controller;
+		},
+		getName	: function() {
+			return actionName;
+		},
 		isPublic	: function() {
 			return !!(_config.public);
 		},
 		run			: function() {
 			var e = true;
 			try {
-				(_config.capture)( appInstance.getRequest(), controllerName, actionName, appInstance );
+				(_config.capture)( appInstance.getRequest(), appInstance, controller, actionObject );
 			} catch(e) {
 				appInstance._events.onError(e);
 			}

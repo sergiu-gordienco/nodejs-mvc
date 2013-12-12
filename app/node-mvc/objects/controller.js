@@ -10,6 +10,9 @@ module.exports	= function( controllerName, options, appInstance ) {
 	// options._noAction( actionName, controllerObject );
 	// console.log(configObject);
 	var controllerObject	= {
+		getName	: function() {
+			return controllerName;
+		},
 		getView	: function( viewName ) {
 			if( appInstance._functions.isValidIdentifier( viewName ) && viewName in _views ) {
 				return _views[viewName];
