@@ -8,7 +8,7 @@ var configObject	= {
 	httpStates	: {
 		// code : function() {}
 	}
-}
+};
 
 // .listen(1337, '127.0.0.1')
 var serverObject	= http.createServer(function( request, response ) {
@@ -29,60 +29,11 @@ var _functions	= {
 	isValidIdentifier	: function( id ) {
 		return ( typeof(id) == "string" && id.match(/^[a-z][a-z0-9\-]+[a-z0-9]$/i) );
 	}
-}
+};
 
-var actionInstance		= function( actionName, actionObject ) {
-	var _config	= {
-		"public"	: false
-	}
-	var actionObject	= {
-		isPublic	: function() {
-			return !!(_config.public);
-		}
-	}
-}
+var actionInstance		= require('./objects/action');
 
-var controllerInstance	= function( controllerName, options ) {
-	var _config	= {};
-	var _views	= {};
-	var _actions	= {};
-	_config.controllerName	= controllerName;
-
-	// options._onAction( actionName, controllerObject );
-	// options._noAction( actionName, controllerObject );
-	console.log(configObject);
-	var controllerPublic	= {
-		getView	: function( viewName ) {
-			if( _functions.isValidIdentifier( viewName ) && viewName in _views ) {
-				return _views[viewName];
-			};
-			return null;
-		},
-		getAction	: function( actionName ) {
-			if( _functions.isValidIdentifier( actionName ) && actionName in _actions ) {
-				return _actions[actionName];
-			};
-			return null;
-		},
-		actionExists	: function( actionName ) {
-			return ( _functions.isValidIdentifier( actionName ) && actionName in _actions );
-		},
-		addAction	: function( actionName, options ) {
-			if( _functions.isValidIdentifier( actionName ) && !controllerObject.actionExists( actionName ) ) {
-				_actions[actionName]	= new actionInstance( actionName, options );
-				return true;
-			}
-			return false;
-		},
-		removeAction	: function( actionName, options ) {
-			if( controllerObject.actionExists( actionName ) ) {
-				delete	_actions[actionName];
-				return true;
-			}
-			return false;
-		}
-	};
-}
+var controllerInstance	= require('./objects/controller');
 
 
 module.exports	= {
@@ -101,12 +52,11 @@ module.exports	= {
 		if( _functions.isValidIdentifier( controllerName ) && this.controllerExists( controllerName ) ) {
 			delete configObject.controllers[controllerName];
 			return true;
-		};
+		}
 		return false;
 	},
 	getServer	: function() {
 		return serverObject;
 	}
 	// onHttpState( code [function], [vars] )
-
-}
+};

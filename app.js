@@ -1,7 +1,7 @@
 
 
 
-var app	= require('./app/app-config');
+var app	= require('./app/node-mvc/app.js');
 
 (require('./bootstrap'))(app);
 
