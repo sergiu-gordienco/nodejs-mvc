@@ -27,7 +27,8 @@ var serverObject	= http.createServer(function( request, response ) {
 
 var controllerInstance	= require('./objects/controller');
 var appInstance			= {
-	_functions	: {}
+	_functions	: {},
+	_events		: {}
 };
 
 var moduleObject	= {
@@ -63,5 +64,9 @@ moduleObject._functions	= {
 
 appInstance._functions.isValidIdentifier	= moduleObject._functions.isValidIdentifier;
 appInstance.structure						= moduleObject;
+
+appInstance._events.onError	= function( error ) {
+	console.error( error );
+};
 
 module.exports	= moduleObject;

@@ -29,7 +29,7 @@ module.exports	= function( controllerName, options, appInstance ) {
 			console.log('##actionAdding',actionName);
 			if( appInstance._functions.isValidIdentifier( actionName ) && !controllerObject.actionExists( actionName ) ) {
 				console.log('##actionAdded',actionName);
-				_actions[actionName]	= new actionInstance( actionName, options, appInstance );
+				_actions[actionName]	= new actionInstance( actionName, controllerName, options, appInstance );
 				return _actions[actionName];
 			}
 			return false;
