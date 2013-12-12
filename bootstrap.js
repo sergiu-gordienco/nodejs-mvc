@@ -5,11 +5,6 @@ module.exports	= function( app ) {
 	fs.readdirSync(appPath).forEach(function(folder) {
 		stats = fs.statSync(appPath+folder);
 		if(stats.isDirectory()) {
-			// scan for views
-
-			// scan for js actions
-
-			// check if exista other bootstrap file
 			var configFile	= appPath+folder+"/config.js";
 			if( fs.existsSync(configFile) ) {
 				controller	= new app.addController(folder, require(configFile));
