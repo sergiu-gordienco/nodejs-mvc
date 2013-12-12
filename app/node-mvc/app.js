@@ -1,21 +1,30 @@
 
-var http	= require('http');
-var fs		= require('fs');
+
+
+var _classes	= {
+	http	: require('http'),
+	fs		: require('fs'),
+	url		: require('url')
+};
 
 var configObject	= {
 	debug	: true,
 	controllers	: {},
 	httpStates	: {
 		// code : function() {}
+	},
+	handdleServerResponse	: function( request, response ) {
+		response.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
+		// console.dir(response.url);
+		var url	= _classes.url.parse(request.url);
+		response.write(JSON.stringify(url));
+		response.end('Hello World\n');
 	}
 };
 
 // .listen(1337, '127.0.0.1')
-var serverObject	= http.createServer(function( request, response ) {
-	// request.url
-	// response.writeHead(200, {'Content-Type': 'text/plain'});
-	// response.write('');
-	response.end('Hello World\n');
+var serverObject	= _classes.http.createServer(function( request, response ) {
+	configObject.handdleServerResponse( request, response );
 });
 
 // var net = require('net');
