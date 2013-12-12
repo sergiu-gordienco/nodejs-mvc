@@ -13,11 +13,31 @@ var configObject	= {
 	httpStates	: {
 		// code : function() {}
 	},
+	request	: {
+		urlObject	: false,
+		controller	: 'index',
+		action		: 'index',
+		params		: []
+	},
 	handdleServerResponse	: function( request, response ) {
 		response.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
-		// console.dir(response.url);
-		var url	= _classes.url.parse(request.url);
-		response.write(JSON.stringify(url));
+		var url = request.url;
+		var urlObj	= _classes.url.parse(url);
+		var parts	= urlObj.path.split(/\//);
+		configObject.request.urlObject	= urlObj;
+		configObject.request.controller	= parts[1] || "index";
+		configObject.request.action		= parts[2] || "index";
+		configObject.request.params		= parts.slice(3).map(function(v) {
+			var e,r;
+			try {
+				r = decodeURIComponent(v);
+			} catch(e) {
+				r = unescape(v);
+			}
+			return r;
+		});
+		// find controller and run action
+		response.write(JSON.stringify(configObject.request));
 		response.end('Hello World\n');
 	}
 };
