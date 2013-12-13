@@ -26,13 +26,13 @@ module.exports	= function( controllerName, options, appInstance ) {
 			if( appInstance._functions.isValidIdentifier( viewName ) && viewName in _views ) {
 				return _views[viewName];
 			}
-			return null;
+			return false;
 		},
 		getAction	: function( actionName ) {
 			if( appInstance._functions.isValidIdentifier( actionName ) && actionName in _actions ) {
 				return _actions[actionName];
 			}
-			return null;
+			return false;
 		},
 		actionExists	: function( actionName ) {
 			return ( appInstance._functions.isValidIdentifier( actionName ) && actionName in _actions );

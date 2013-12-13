@@ -10,9 +10,7 @@ var _classes	= {
 var _configObject	= {
 	debug	: true,
 	controllers	: {},
-	httpStates	: {
-		// code : function() {}
-	},
+	httpStates	: {},
 	cwd		: __dirname+'/',
 	rootPath: __dirname+'/',
 	modulePath	: __dirname+'/modules/',
@@ -26,7 +24,6 @@ var _configObject	= {
 		params		: []
 	},
 	handdleServerResponse	: function( request, response ) {
-		response.writeHead(200, {'Content-Type': 'text/plain; charset=utf-8'});
 		var url = request.url;
 		var urlObj	= _classes.url.parse(url);
 		var parts	= urlObj.path.split(/\//);
@@ -43,19 +40,36 @@ var _configObject	= {
 			return r;
 		});
 		// find controller and run action
-		response.write(JSON.stringify(_configObject.request));
-		response.end('Hello World\n');
+		var controller	= moduleObject.getController(_configObject.request.controller);
+		if( controller !== false ) {
+			var action	= controller.getAction( _configObject.request.action );
+			if( action !== false ) {
+				action.run( request, response );
+				// console.log(action);
+				response.end();
+			} else {
+				response.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
+				response.write(JSON.stringify(_configObject.request));
+				response.end('\n\nPage not found\n');
+			}
+		} else {
+			response.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
+			response.write(JSON.stringify(_configObject.request));
+			response.end('\n\nPage not found\n');
+		}
 	}
 };
 
-// .listen(1337, '127.0.0.1')
-var serverObject	= _classes.http.createServer(function( request, response ) {
-	_configObject.handdleServerResponse( request, response );
-});
-
 var appInstance			= {
 	_functions	: {},
-	_events		: {}
+	_events		: {},
+	getRequest	: function() {
+		var req = {},i;
+		for( i in _configObject.request ) {
+			req[i]	= _configObject.request[i];
+		}
+		return req;
+	}
 };
 
 // var net = require('net');
@@ -65,6 +79,9 @@ var appInstance			= {
 // });
 // server.listen(1337, '127.0.0.1');
 
+var serverObject	= _classes.http.createServer(function( request, response ) {
+	_configObject.handdleServerResponse( request, response );
+});
 var controllerInstance	= require(_configObject.getLibPath()+'controller.js');
 var viewerInstance		= require(_configObject.getLibPath()+'viewer.js');
 var bootstrapInstance	= require(_configObject.cwd+'bootstrap.js');
@@ -92,6 +109,12 @@ var moduleObject	= {
 	},
 	controllerExists	: function() {
 		return ( moduleObject._functions.isValidIdentifier(arguments[0]) && arguments[0] in _configObject.controllers );
+	},
+	getController	: function( controllerName ) {
+		if( moduleObject.controllerExists( controllerName ) ) {
+			return _configObject.controllers[controllerName];
+		}
+		return false;
 	},
 	addController	: function( controllerName, options ) {
 		if( moduleObject._functions.isValidIdentifier(controllerName) )
@@ -126,6 +149,7 @@ moduleObject._functions	= {
 
 appInstance._functions.isValidIdentifier	= moduleObject._functions.isValidIdentifier;
 appInstance.structure						= moduleObject;
+appInstance.viewer							= viewerInstance;
 
 appInstance._events.onError	= function( error ) {
 	console.error( error );
