@@ -43,7 +43,7 @@ var _configObject	= {
 		var controller	= moduleObject.getController(_configObject.request.controller);
 		if( controller !== false ) {
 			var action	= controller.getAction( _configObject.request.action );
-			if( action !== false ) {
+			if( action !== false && action.isPublic() ) {
 				action.run( request, response );
 				// console.log(action);
 				response.end();
