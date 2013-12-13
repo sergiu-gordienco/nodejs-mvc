@@ -7,11 +7,17 @@ var _classes	= {
 	url		: require('url')
 };
 
-var configObject	= {
+var _configObject	= {
 	debug	: true,
 	controllers	: {},
 	httpStates	: {
 		// code : function() {}
+	},
+	cwd		: __dirname+'/',
+	rootPath: __dirname+'/',
+	modulePath	: __dirname+'/modules/',
+	getLibPath	: function() {
+		return _configObject.cwd+'objects/';
 	},
 	request	: {
 		urlObject	: false,
@@ -24,10 +30,10 @@ var configObject	= {
 		var url = request.url;
 		var urlObj	= _classes.url.parse(url);
 		var parts	= urlObj.path.split(/\//);
-		configObject.request.urlObject	= urlObj;
-		configObject.request.controller	= parts[1] || "index";
-		configObject.request.action		= parts[2] || "index";
-		configObject.request.params		= parts.slice(3).map(function(v) {
+		_configObject.request.urlObject	= urlObj;
+		_configObject.request.controller	= parts[1] || "index";
+		_configObject.request.action		= parts[2] || "index";
+		_configObject.request.params		= parts.slice(3).map(function(v) {
 			var e,r;
 			try {
 				r = decodeURIComponent(v);
@@ -37,15 +43,20 @@ var configObject	= {
 			return r;
 		});
 		// find controller and run action
-		response.write(JSON.stringify(configObject.request));
+		response.write(JSON.stringify(_configObject.request));
 		response.end('Hello World\n');
 	}
 };
 
 // .listen(1337, '127.0.0.1')
 var serverObject	= _classes.http.createServer(function( request, response ) {
-	configObject.handdleServerResponse( request, response );
+	_configObject.handdleServerResponse( request, response );
 });
+
+var appInstance			= {
+	_functions	: {},
+	_events		: {}
+};
 
 // var net = require('net');
 // var server = net.createServer(function (socket) {
@@ -54,33 +65,55 @@ var serverObject	= _classes.http.createServer(function( request, response ) {
 // });
 // server.listen(1337, '127.0.0.1');
 
-var controllerInstance	= require('./objects/controller');
-var appInstance			= {
-	_functions	: {},
-	_events		: {}
-};
+var controllerInstance	= require(_configObject.getLibPath()+'controller.js');
+var viewerInstance		= require(_configObject.getLibPath()+'viewer.js');
+var bootstrapInstance	= require(_configObject.cwd+'bootstrap.js');
 
 var moduleObject	= {
+	cwd		: function() {
+		return _configObject.cwd;
+	},
+	setModulePath	: function(dir) {
+		_configObject.modulePath	= dir.replace(/\/+$/)+'/';
+		return true;
+	},
+	getModulePath	: function(dir) {
+		return _configObject.modulePath;
+	},
+	setRootPath	: function(dir) {
+		_configObject.rootPath	= dir.replace(/\/+$/)+'/';
+		return true;
+	},
+	getRootPath	: function(dir) {
+		return _configObject.rootPath;
+	},
+	getLibPath	: function() {
+		return _configObject.getLibPath();
+	},
 	controllerExists	: function() {
-		return ( moduleObject._functions.isValidIdentifier(arguments[0]) && arguments[0] in configObject.controllers );
+		return ( moduleObject._functions.isValidIdentifier(arguments[0]) && arguments[0] in _configObject.controllers );
 	},
 	addController	: function( controllerName, options ) {
 		if( moduleObject._functions.isValidIdentifier(controllerName) )
 		if( !moduleObject.controllerExists(controllerName) ) {
-			configObject.controllers[controllerName]	= new controllerInstance( controllerName, options, appInstance );
-			return configObject.controllers[controllerName];
+			_configObject.controllers[controllerName]	= new controllerInstance( controllerName, options, appInstance );
+			_configObject.controllers[controllerName]._setViewer( viewerInstance );
+			return _configObject.controllers[controllerName];
 		}
 		return false;
 	},
 	removeController	: function( controllerName ) {
 		if( _functions.isValidIdentifier( controllerName ) && moduleObject.controllerExists( controllerName ) ) {
-			delete configObject.controllers[controllerName];
+			delete _configObject.controllers[controllerName];
 			return true;
 		}
 		return false;
 	},
 	getServer	: function() {
 		return serverObject;
+	},
+	runBootstrap	: function() {
+		bootstrapInstance( moduleObject, moduleObject.getModulePath() );
 	}
 	// onHttpState( code [function], [vars] )
 };

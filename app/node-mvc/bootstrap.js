@@ -1,6 +1,9 @@
 var fs	= require('fs');
-var appPath	= './app/modules/';
-module.exports	= function( app ) {
+var _appPath	= __dirname+'/modules/';
+module.exports	= function( app, appPath ) {
+	if(!appPath) {
+		appPath	= _appPath;
+	}
 	var actionName, stats, configFile, controller, action;
 	fs.readdirSync(appPath).forEach(function(folder) {
 		stats = fs.statSync(appPath+folder);

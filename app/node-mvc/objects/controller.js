@@ -5,11 +5,20 @@ module.exports	= function( controllerName, options, appInstance ) {
 	var _views	= {};
 	var _actions	= {};
 	_config.controllerName	= controllerName;
+	var _viewer	= false;
 
 	// options._onAction( actionName, controllerObject );
 	// options._noAction( actionName, controllerObject );
 	// console.log(configObject);
 	var controllerObject	= {
+		_setViewer	: function( o ) {
+			if( _viewer === false ) {
+				_viewer	= o;
+			}
+		},
+		getViewer	: function() {
+			return _viewer;
+		},
 		getName	: function() {
 			return controllerName;
 		},
@@ -29,9 +38,7 @@ module.exports	= function( controllerName, options, appInstance ) {
 			return ( appInstance._functions.isValidIdentifier( actionName ) && actionName in _actions );
 		},
 		addAction	: function( actionName, options ) {
-			console.log('##actionAdding',actionName);
 			if( appInstance._functions.isValidIdentifier( actionName ) && !controllerObject.actionExists( actionName ) ) {
-				console.log('##actionAdded',actionName);
 				_actions[actionName]	= new actionInstance( actionName, controllerName, options, appInstance );
 				return _actions[actionName];
 			}
