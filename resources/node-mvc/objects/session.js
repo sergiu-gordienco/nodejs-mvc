@@ -2,7 +2,7 @@ var _sessions	= {};
 var sessionCleaner	= function() {
 	var t = new Date().valueOf();
 	var i;for( i in _sessions ) {
-		if( t <= _sessions[i].expire )
+		if( t > _sessions[i].expire )
 			delete _sessions[i];
 	}
 };
