@@ -6,7 +6,8 @@ module.exports	= {
 	capture	: function( request, response, app, controller, action ) {
 		// 
 		// app.getRequest()
-		response.write('counter = '+(_vars.i++));
+		// response.write('counter = '+(_vars.i++));
 		// app.viewer.render( response, template );
+		controller.render( response, 'index');
 	}
 };

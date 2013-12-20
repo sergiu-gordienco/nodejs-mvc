@@ -14,6 +14,7 @@ var _configObject	= {
 	cwd		: __dirname+'/',
 	rootPath: __dirname+'/',
 	modulePath	: __dirname+'/modules/',
+	publicPath	: false,
 	getLibPath	: function() {
 		return _configObject.cwd+'objects/';
 	},
@@ -22,6 +23,17 @@ var _configObject	= {
 		controller	: 'index',
 		action		: 'index',
 		params		: []
+	},
+	handdleStaticResponse	: function( request, response ) {
+		_classes.fs.readFile( _configObject.publicPath + request.url, function (err,data) {
+			if (err) {
+				response.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
+				response.end(JSON.stringify(err));
+			return;
+			}
+			response.writeHead(200);
+			response.end(data);
+		});
 	},
 	handdleServerResponse	: function( request, response ) {
 		var url = request.url;
@@ -48,21 +60,19 @@ var _configObject	= {
 				// console.log(action);
 				response.end();
 			} else {
-				response.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
-				response.write(JSON.stringify(_configObject.request));
-				response.end('\n\nPage not found\n');
+				_configObject.handdleStaticResponse( request, response );
 			}
 		} else {
-			response.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
-			response.write(JSON.stringify(_configObject.request));
-			response.end('\n\nPage not found\n');
+			_configObject.handdleStaticResponse( request, response );
 		}
-	}
+	},
+	_staticServer	: false
 };
 
 var appInstance			= {
 	_functions	: {},
 	_events		: {},
+	_vars		: {},
 	getRequest	: function() {
 		var req = {},i;
 		for( i in _configObject.request ) {
@@ -96,6 +106,13 @@ var moduleObject	= {
 	},
 	getModulePath	: function(dir) {
 		return _configObject.modulePath;
+	},
+	setPublicPath	: function(dir) {
+		_configObject.publicPath	= dir.replace(/\/+$/)+'/';
+		return true;
+	},
+	getPublicPath	: function(dir) {
+		return _configObject.publicPath;
 	},
 	setRootPath	: function(dir) {
 		_configObject.rootPath	= dir.replace(/\/+$/)+'/';
@@ -150,6 +167,7 @@ moduleObject._functions	= {
 appInstance._functions.isValidIdentifier	= moduleObject._functions.isValidIdentifier;
 appInstance.structure						= moduleObject;
 appInstance.viewer							= viewerInstance;
+
 
 appInstance._events.onError	= function( error ) {
 	console.error( error );
