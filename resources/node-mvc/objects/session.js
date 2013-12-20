@@ -41,7 +41,7 @@ module.exports	= function( req, res, app ) {
 			if( !ssid ) ssid = false;
 			var session	= _functions.getSession(ssid);
 			if( session ) {
-				session.expire	= new Date().valueOf() + ( secconds || 0 );
+				session.expire	= new Date().valueOf() + ( secconds || 0 ) * 1000;
 			}
 		},
 		getExpire		: function( ssid ) {
