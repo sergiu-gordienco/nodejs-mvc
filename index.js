@@ -434,6 +434,18 @@ var moduleObject	= {
 		};
 		return _config.sessionKey;
 	},
+	sessionSecretKey	: function( name ) {
+		if( typeof( name ) === "string" ) {
+			_config.sessionSecret	= name;
+		};
+		return _config.sessionSecret;
+	},
+	cookieSecretKey	: function( name ) {
+		if( typeof( name ) === "string" ) {
+			_config.cookieSecret	= name;
+		};
+		return _config.cookieSecret;
+	},
 	controllerExists	: function() {
 		return ( moduleObject._functions.isValidIdentifier(arguments[0]) && arguments[0] in _config.controllers );
 	},
