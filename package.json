@@ -1,0 +1,44 @@
+{
+  "name": "nodejs-mvc",
+  "version": "1.0.2",
+  "description": "MVC pattern application in nodejs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sergiu-gordienco/nodejs-module-require.git"
+  },
+  "keywords": [
+    "module",
+    "require",
+    "node",
+    "custom",
+    "mvc",
+    "pattern",
+    "view",
+    "controller",
+    "map",
+    "mapping"
+  ],
+  "author": "Sergiu Gordienco <sergiu.gordienco@gmail.com> (http://www.cloudwebcode.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sergiu-gordienco/nodejs-mvc/issues"
+  },
+  "homepage": "https://github.com/sergiu-gordienco/nodejs-mvc",
+  "dependencies"	: {
+    "module-require"	: ">=1.4.2",
+    "cookie"        : "*",
+    "cookie-parser" : "*",
+    "cookie-signature"  : "*",
+    "utils-merge"   : "*",
+    "express-session"	: "*",
+    "connect-multiparty"	: "*",
+    "handlebars"  : "*",
+    "mustache"    : "*",
+    "jade"    : "*",
+    "connect"	: "*"
+  }
+}

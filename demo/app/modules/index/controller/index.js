@@ -4,10 +4,9 @@ var _vars	= {
 module.exports	= {
 	public	: true,
 	capture	: function( request, response, app, controller, action ) {
-		// 
-		// app.getRequest()
-		// response.write('counter = '+(_vars.i++));
+		response.write('counter = '+(_vars.i++));
+		response.end();
 		// app.viewer.render( response, template );
-		controller.render( response, 'index');
+		// controller.render( response, 'index');
 	}
 };

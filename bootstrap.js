@@ -22,7 +22,7 @@ module.exports	= function( app, appPath ) {
 				});
 				fs.readdirSync(appPath+folder+"/views/").forEach(function(item) {
 					stats = fs.statSync(appPath+folder+"/views/"+item);
-					if(stats.isFile() && item.match(/\.(tpl|html|htm|jade|txt)$/) ) {
+					if(stats.isFile() && item.match(/\.(fbx\-tpl|tpl|html|htm|jade|mustache|handlebars|txt)$/) ) {
 						view = controller.addView(
 							item.replace(/\.[^\.]+$/,''),
 							appPath+folder+"/views/"+item,
