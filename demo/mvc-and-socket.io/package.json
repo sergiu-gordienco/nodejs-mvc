@@ -1,0 +1,15 @@
+{
+  "name": "nodejs-mvc_example-with-socket.io",
+  "version": "1.0.0",
+  "description": "MVC pattern application in nodejs; This Example is using source from: https://github.com/Automattic/socket.io/tree/master/examples/chat",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Sergiu Gordienco <sergiu.gordienco@gmail.com> (http://www.cloudwebcode.com/)",
+  "license": "MIT",
+  "dependencies"    : {
+    "nodejs-mvc"    : "*",
+    "socket.io"     : "*"
+  }
+}

@@ -1,7 +1,7 @@
 
 
 
-var app	= require(__dirname + '/../index.js');
+var app	= require("nodejs-mvc");
 var appVars	= app.getVars();
 
 var server	= require("http").createServer(function( request, response, next ) {
@@ -19,4 +19,7 @@ app.setPublicPath( __dirname+'/public');
 app.setModulePath( __dirname+'/app/modules');
 app.runBootstrap();
 
+
 server.listen(8080);
+
+

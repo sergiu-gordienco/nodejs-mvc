@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Wellcome</title>
+</head>
+<body>
+	It works !
+	PageViews: {{ vars.pageviews }}
+</body>
+</html>

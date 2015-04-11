@@ -169,7 +169,7 @@ var _config	= {
 			}
 		});
 	},
-	handleServerResponse		: function (request, response, next) {
+	handleServerMidleware	: function (request, response, next) {
 		var root	= _config;
 		if (!root.cookieHandler) {
 			root.cookieHandler	= _classes.cookieParser(root.cookieSecret || root.sessionSecret);
@@ -183,19 +183,33 @@ var _config	= {
 				store	: root.sessionStore
 			});
 		};
-
-		request.secret	= root.cookieSecret || root.sessionSecret;
-		response.req	= request;
-
 		root.cookieHandler(request, response, function (err) {
-				console.log("Cookies", arguments);
+			if (err && next) {
+				return next(err);
+			};
+			// console.log("Cookies", arguments);
+			if (request)
+				request.secret	= root.cookieSecret || root.sessionSecret;
+			if (request && response)
+				response.req	= request;
 			responseCookie(response);
 			root.sessionHandler(request, response, function (err) {
-				console.log("Session", arguments);
-				console.log("Request", request);
-				console.log("Response", response);
-				_config.handleServerResponseLogic(request, response, next);
+				if (err && next) {
+					return next(err);
+				};
+				// console.log("Session", arguments);
+				// console.log("Request", request);
+				// console.log("Response", response);
+				if (next) {
+					next();
+				}
 			});
+		});
+	},
+	handleServerResponse		: function (request, response, next) {
+		var root	= _config;
+		root.handleServerMidleware(request, response, function () {
+			_config.handleServerResponseLogic(request, response, next);
 		});
 	},
 	handleServerResponseLogic	: function( request, response, next ) {
@@ -481,7 +495,8 @@ var moduleObject	= {
 			return viewerInstance.getEnvVars();
 		}
 	},
-	handleServerResponse	: _config.handleServerResponse
+	handleServerResponse	: _config.handleServerResponse,
+	handleServerMidleware	: _config.handleServerMidleware
 };
 
 moduleObject._functions	= {
