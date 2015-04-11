@@ -1,0 +1,118 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'node', '/usr/local/bin/npm', 'publish' ]
+2 info using npm@2.7.5
+3 info using node@v0.10.24
+4 verbose publish [ '.' ]
+5 silly cache add args [ '.', null ]
+6 verbose cache add spec .
+7 silly cache add parsed spec { raw: '.',
+7 silly cache add   scope: null,
+7 silly cache add   name: null,
+7 silly cache add   rawSpec: '.',
+7 silly cache add   spec: '/home/cloudweb1/Desktop/GITHUB-DEV/nodejs-mvc',
+7 silly cache add   type: 'directory' }
+8 verbose addLocalDirectory /home/cloudweb1/.npm/nodejs-mvc/1.0.5/package.tgz not in flight; packing
+9 verbose tar pack [ '/home/cloudweb1/.npm/nodejs-mvc/1.0.5/package.tgz',
+9 verbose tar pack   '/home/cloudweb1/Desktop/GITHUB-DEV/nodejs-mvc' ]
+10 verbose tarball /home/cloudweb1/.npm/nodejs-mvc/1.0.5/package.tgz
+11 verbose folder /home/cloudweb1/Desktop/GITHUB-DEV/nodejs-mvc
+12 info prepublish nodejs-mvc@1.0.5
+13 verbose addLocalTarball adding from inside cache /home/cloudweb1/.npm/nodejs-mvc/1.0.5/package.tgz
+14 silly cache afterAdd nodejs-mvc@1.0.5
+15 verbose afterAdd /home/cloudweb1/.npm/nodejs-mvc/1.0.5/package/package.json not in flight; writing
+16 verbose afterAdd /home/cloudweb1/.npm/nodejs-mvc/1.0.5/package/package.json written
+17 silly publish { name: 'nodejs-mvc',
+17 silly publish   version: '1.0.5',
+17 silly publish   description: 'MVC pattern application in nodejs',
+17 silly publish   main: 'index.js',
+17 silly publish   scripts: { test: 'echo "Error: no test specified" && exit 1' },
+17 silly publish   repository:
+17 silly publish    { type: 'git',
+17 silly publish      url: 'https://github.com/sergiu-gordienco/nodejs-module-require.git' },
+17 silly publish   keywords:
+17 silly publish    [ 'module',
+17 silly publish      'require',
+17 silly publish      'node',
+17 silly publish      'custom',
+17 silly publish      'mvc',
+17 silly publish      'pattern',
+17 silly publish      'view',
+17 silly publish      'controller',
+17 silly publish      'map',
+17 silly publish      'mapping' ],
+17 silly publish   author:
+17 silly publish    { name: 'Sergiu Gordienco',
+17 silly publish      email: 'sergiu.gordienco@gmail.com',
+17 silly publish      url: 'http://www.cloudwebcode.com/' },
+17 silly publish   license: 'MIT',
+17 silly publish   bugs: { url: 'https://github.com/sergiu-gordienco/nodejs-mvc/issues' },
+17 silly publish   homepage: 'https://github.com/sergiu-gordienco/nodejs-mvc',
+17 silly publish   dependencies:
+17 silly publish    { 'module-require': '>=1.4.2',
+17 silly publish      cookie: '*',
+17 silly publish      'cookie-parser': '*',
+17 silly publish      'cookie-signature': '*',
+17 silly publish      'utils-merge': '*',
+17 silly publish      'express-session': '*',
+17 silly publish      'connect-multiparty': '*',
+17 silly publish      handlebars: '*',
+17 silly publish      mustache: '*',
+17 silly publish      jade: '*',
+17 silly publish      connect: '*' },
+17 silly publish   readme: 'nodejs-mvc\n==========\n\nFast and simple MCV in nodejs\n\n\n### [Section 1] Starting an Application\n\n```javascript\n\n\tvar app\t= require("nodejs-mvc");\n\tvar appVars\t= app.getVars();\n\n\tvar server\t= require("http").createServer(function( request, response, next ) {\n\t\tapp.handleServerResponse( request, response, next );\n\t});\n\n\tapp.sessionCookieName("ssid");\n\tapp.sessionDynCookieName("ssid");\n\tapp.sessionDynCookieDomain(false);\n\tapp.sessionDynAutoUpdate(true);\n\tapp.sessionDynExpire(60*60*2);\n\n\tapp.setRootPath( __dirname );\n\tapp.setPublicPath( __dirname+\'/public\');\n\tapp.setModulePath( __dirname+\'/app/modules\');\n\tapp.runBootstrap();\n\n\tserver.listen(8080);\n```\n\n### [Section 2] Attaching a "socket.io" to server and assing SESSION and COOKIES\n\n```javascript\n\n\t--------------------------\n\t// add here CODE from [ Section 1 ]\n\t--------------------------\n\n\t/****************************\n\t * Ataching SocketIO server *\n\t ***************************/\n\n\tvar io = require(\'socket.io\')(server);\n\n\t/**\n\t * adding session to socketio on authorisation\n\t */\n\n\tvar io = require(\'socket.io\')(server);\n\n\tio.set(\'authorization\', function(data, accept) {\n\t\t// check if user has a session\n\t\tapp.handleServerMidleware(data, {}, function (err) {\n\t\t\tif (!err) {\n\t\t\t\tconsole.log("authorization-no-session::signedCookies: ", data.session, data.cookies, data.signedCookies);\n\t\t\t\taccept(null, true);\n\t\t\t} else {\n\t\t\t\tconsole.log("authorization-session::signedCookies: ", data.session, data.cookies, data.signedCookies);\n\t\t\t\taccept(null, true);\n\t\t\t}\n\t\t});\n\t});\n\n\tio.sockets.on(\'connection\', function (client) {\n\t\tvar sessionCronTimer;\n\n\t\t// attaching session to socket\n\t\tapp.handleServerMidleware(client.handshake, {}, function (err) {\n\t\t\tif (!err) {\n\t\t\t\t// adding client session\n\t\t\t\tclient.session\t= client.handshake.session;\n\n\t\t\t\t// adding cron form refreshing session\n\t\t\t\tsessionCronTimer\t= setInterval(function () {\n\t\t\t\t\tclient.handshake.session.reload( function () { \n\t\t\t\t\t\tclient.handshake.session.touch().save();\n\t\t\t\t\t});\n\t\t\t\t}, 2000);\n\t\t});\n\n\t\tclient.on(\'disconnect\', function () {\n\t\t\tvar er; try {\n\t\t\t\tclearInterval(sessionCronTimer);\n\t\t\t} catch (er) {};\n\t\t});\n\t});\n\n\t// attaching your events :)\n\tio.on(\'connection\', function(socket){\n\t\tsocket.on(\'event\', function(data){});\n\t\tsocket.on(\'disconnect\', function(){});\n\t});\n```\n\n\n> A demo application you will see in ./demo/mvc-sample/app.js\n\n## Templating FaceboxTPL\n\n### To view parameters that are send have folowing structure\n\nOn template Rendering we have following variables\n\n```javascript\n\n\t// variables that a sent from controllers\n\tvar vars\t= {};\n\t\n\tvar env\t\t= {\n\t\terror\t: [],\n\t\tvars\t: envVars,\n\t\tpath\t: "", // file path of current rendered template\n\t\tdirname\t: "", // dirname of current rendered template\n\t\trender\t: function( text, vars, env ) {}, // render function\n\t\trenderFile\t: function( file, vars, callback ) {}, // render file function\n\t\t\t// callback( error {{ [] or false }}, htm)\n\t};\n\n\t// env vars sent from app\n\tenv.vars = {\n\t\tresponse : [object] // http reponse object \n\t}\n```\n\n### An example how to render a view:\n\n```javascript\n\n\t// file app/modules/index/controller/pageviews.js\n\n\t// file reprezents action pageviews from controller index\n\tvar _vars\t= {\n\t\tpageviews\t: 0\n\t};\n\tmodule.exports\t= {\n\t\tpublic\t: true,\n\t\tcapture\t: function( request, response, app, controller, action ) {\n\t\t\t// increasing pageviews\n\t\t\t// sending pageviews to view\n\t\t\tcontroller.render( response, \'index\', { pageviews: (++_vars.pageviews) });\n\t\t}\n\t};\n```\n\n### Operation in templates\n\n#### Include another template\n\n```\n\t<!DOCTYPE html>\n\t<html lang="en">\n\t<head>\n\t\t<meta charset="UTF-8">\n\t\t<title>Document</title>\n\t</head>\n\t<body>\n\t\t<!-- Include rendered teplate -->\n\t\t{{render: env.vars.paths.layouts+"header.tpl" }}\n\t\t<div class="my-content">\n\t\t\t<!-- Include teplate and render with all content -->\n\t\t\t{{include: env.vars.paths.layouts+"header.tpl" }}\n\t\t\tLorem ipsum Excepteur dolore labore nisi non.\n\t\t</div>\n\t\t<!-- Include rendered teplate -->\n\t\t{{render: env.vars.paths.layouts+"footer.tpl" }}\n\t</body>\n\t</html>\n```\n\n#### Executing operations in template code\n\n```\n\t<!DOCTYPE html>\n\t<html lang="en">\n\t<head>\n\t\t<meta charset="UTF-8">\n\t\t<title>Document</title>\n\t</head>\n\t<body>\n\t\t{eval}\n\t\t\tvars.item_index\t= 0;\n\t\t{eval}\n\t\t<ul>\n\t\t\t<li>item {{ ++vars.item_index }}</li>\n\t\t\t<li>item {{ ++vars.item_index }}</li>\n\t\t\t<li>item {{ ++vars.item_index }}</li>\n\t\t\t<li>item {{ ++vars.item_index }}</li>\n\t\t\t<li>item {{ ++vars.item_index }}</li>\n\t\t</ul>\n\t\t{js-return}\n\t\t\tvar message\t= \'Were inserted \'+vars.item_index+\' items\';\n\t\t\t// returning response that will be inserted\n\t\t\treturn message;\n\t\t{js-return}\n\t</body>\n\t</html>\n```\n\n\n#### Isolate a section of code from parsing / noformat\n\n```\n\t<!DOCTYPE html>\n\t<html lang="en">\n\t<head>\n\t\t<meta charset="UTF-8">\n\t\t<title>Document</title>\n\t</head>\n\t<body>\n\t\t{code}\n\t\t\tnot parsed code ... even this "{{read:license.txt}}"\n\t\t{code}\n\t</body>\n\t</html>\n```\n\n\n#### Adding a script and a css style\n\n```\n\t<!DOCTYPE html>\n\t<html lang="en">\n\t<head>\n\t\t<meta charset="UTF-8">\n\t\t<title>Document</title>\n\t</head>\n\t<body>\n\t\t{js-script}\n\t\t\t// javascript code\n\t\t\talert("Hello");\n\t\t{js-script}\n\t\t{css-style}\n\t\t\thtml, body {\n\t\t\t\tbackground\t: white;\n\t\t\t\tcolor\t: black;\n\t\t\t}\n\t\t{css-style}\n\t</body>\n\t</html>\n```\n\n#### Include content from a file without parcing it\n```html\n\t<h1>License</h1>\n\t<pre><code>\n\t\t{{read:license.txt}}\n\t</code></pre>\n```\n\n#### Include content from a file encoded in HEX\n\n```html\n\t<script type="text/javascript">\n\t\tvar fileHexContent\t= "{{read-hex:file.hex}}"\n\t</script>\n```\n\n\n#### Include content from a file encoded in base64\n```html\n\t<img src="data:image/jpeg; base64,{{read-base64:image.png}}" />\n```\n\n\n## Authors\n\n - Gordienco Sergiu\n\n## License\n\n(The MIT License)\n\nCopyright (c) 2014 Gordienco Sergiu &lt;sergiu.gordienco@gmail.com&gt;\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\'Software\'), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \'AS IS\', WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n',
+17 silly publish   readmeFilename: 'README.md',
+17 silly publish   gitHead: '32c27bd281da8e8cf8b9b1ffadc22bc161e9a2ad',
+17 silly publish   _id: 'nodejs-mvc@1.0.5',
+17 silly publish   _shasum: 'c791bb8d62d0ec57dc068ccf0e9f8b61d91a5932',
+17 silly publish   _from: '.' }
+18 silly mapToRegistry name nodejs-mvc
+19 silly mapToRegistry using default registry
+20 silly mapToRegistry registry https://registry.npmjs.org/
+21 silly mapToRegistry uri https://registry.npmjs.org/nodejs-mvc
+22 verbose publish registryBase https://registry.npmjs.org/
+23 silly publish uploading /home/cloudweb1/.npm/nodejs-mvc/1.0.5/package.tgz
+24 verbose request uri https://registry.npmjs.org/nodejs-mvc
+25 verbose request sending authorization for write operation
+26 info attempt registry request try #1 at 02:07:48
+27 verbose request using bearer token for auth
+28 verbose request id 0c52b9d587b9f5de
+29 http request PUT https://registry.npmjs.org/nodejs-mvc
+30 http 403 https://registry.npmjs.org/nodejs-mvc
+31 verbose headers { date: 'Sat, 11 Apr 2015 23:07:49 GMT',
+31 verbose headers   server: 'Apache',
+31 verbose headers   'content-type': 'application/json',
+31 verbose headers   'cache-control': 'max-age=60',
+31 verbose headers   'content-length': '95',
+31 verbose headers   'accept-ranges': 'bytes',
+31 verbose headers   via: '1.1 varnish',
+31 verbose headers   'x-served-by': 'cache-fra1236-FRA',
+31 verbose headers   'x-cache': 'MISS',
+31 verbose headers   'x-cache-hits': '0',
+31 verbose headers   'x-timer': 'S1428793668.404244,VS0,VE1250',
+31 verbose headers   'keep-alive': 'timeout=10, max=50',
+31 verbose headers   connection: 'Keep-Alive' }
+32 verbose request invalidating /home/cloudweb1/.npm/registry.npmjs.org/nodejs-mvc on PUT
+33 error publish Failed PUT 403
+34 verbose stack Error: "You cannot publish over the previously published version 1.0.5." : nodejs-mvc
+34 verbose stack     at CachingRegistryClient.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:247:14)
+34 verbose stack     at Request._callback (/usr/local/lib/node_modules/npm/node_modules/npm-registry-client/lib/request.js:170:14)
+34 verbose stack     at Request.self.callback (/usr/local/lib/node_modules/npm/node_modules/request/request.js:360:22)
+34 verbose stack     at Request.EventEmitter.emit (events.js:98:17)
+34 verbose stack     at Request.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1202:14)
+34 verbose stack     at Request.EventEmitter.emit (events.js:117:20)
+34 verbose stack     at IncomingMessage.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/request/request.js:1150:12)
+34 verbose stack     at IncomingMessage.EventEmitter.emit (events.js:117:20)
+34 verbose stack     at _stream_readable.js:920:16
+34 verbose stack     at process._tickCallback (node.js:415:13)
+35 verbose statusCode 403
+36 verbose pkgid nodejs-mvc
+37 verbose cwd /home/cloudweb1/Desktop/GITHUB-DEV/nodejs-mvc
+38 error Linux 3.13.0-48-generic
+39 error argv "node" "/usr/local/bin/npm" "publish"
+40 error node v0.10.24
+41 error npm  v2.7.5
+42 error code E403
+43 error "You cannot publish over the previously published version 1.0.5." : nodejs-mvc
+44 error If you need help, you may report this error at:
+44 error     <https://github.com/npm/npm/issues>
+45 verbose exit [ 1, true ]
