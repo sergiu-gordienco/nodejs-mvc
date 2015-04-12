@@ -29,7 +29,7 @@ Fast and simple MCV in nodejs
 	server.listen(8080);
 ```
 
-### [Section 2] Attaching a "socket.io" to server and assing SESSION and COOKIES
+### [Section 2] Attaching a "socket.io" to server and assign SESSION and COOKIES
 
 ```javascript
 
@@ -38,13 +38,13 @@ Fast and simple MCV in nodejs
 	--------------------------
 
 	/****************************
-	 * Ataching SocketIO server *
+	 * Attaching SocketIO server *
 	 ***************************/
 
 	var io = require('socket.io')(server);
 
 	/**
-	 * adding session to socketio on authorisation
+	 * adding session to socket.io on authorization
 	 */
 
 	var io = require('socket.io')(server);
@@ -96,9 +96,9 @@ Fast and simple MCV in nodejs
 
 > A demo application you will see in ./demo/mvc-sample/app.js
 
-## Templating FaceboxTPL
+## Templates FaceboxTPL
 
-### To view parameters that are send have folowing structure
+### To view parameters that are send have following structure
 
 On template Rendering we have following variables
 
@@ -119,7 +119,7 @@ On template Rendering we have following variables
 
 	// env vars sent from app
 	env.vars = {
-		response : [object] // http reponse object 
+		response : [object] // http response object 
 	}
 ```
 
@@ -129,15 +129,15 @@ On template Rendering we have following variables
 
 	// file app/modules/index/controller/pageviews.js
 
-	// file reprezents action pageviews from controller index
+	// file represents action page-views from controller index
 	var _vars	= {
 		pageviews	: 0
 	};
 	module.exports	= {
 		public	: true,
 		capture	: function( request, response, app, controller, action ) {
-			// increasing pageviews
-			// sending pageviews to view
+			// increasing page-views
+			// sending page-views to view
 			controller.render( response, 'index', { pageviews: (++_vars.pageviews) });
 		}
 	};
@@ -198,7 +198,7 @@ On template Rendering we have following variables
 ```
 
 
-#### Isolate a section of code from parsing / noformat
+#### Isolate a section of code from parsing / no-format
 
 ```
 	<!DOCTYPE html>
@@ -240,7 +240,7 @@ On template Rendering we have following variables
 	</html>
 ```
 
-#### Include content from a file without parcing it
+#### Include content from a file without parsing it
 ```html
 	<h1>License</h1>
 	<pre><code>
@@ -260,6 +260,108 @@ On template Rendering we have following variables
 #### Include content from a file encoded in base64
 ```html
 	<img src="data:image/jpeg; base64,{{read-base64:image.png}}" />
+```
+
+
+## Using Extended prototype
+
+### Escaping HTML chars
+
+#### For strings references
+```html
+	<a href="{{ vars.url.toHtml() }}">{{ vars.user.name.toHtml() }}</a>
+```
+
+#### For other type of references
+```html
+	<a href="{{ ((vars.url || "") + "").toHtml() }}">{{ ((vars.user.name || "") + "").toHtml() }}</a>
+```
+
+## Global Functions
+
+### Encode URL variables
+
+```javascript
+	objEncodeURL	= function(data, prefix) { /*...*/ }
+```
+
+> `objEncodeURL({ foo: 5, bar: [1,5,9], cid: "id-3453" })`
+> result `foo=5&bar[0]=1&bar[1]=5&bar[2]=9&cid=id-3453`
+
+> `objEncodeURL([{ foo: 5, bar: [1,5,9], cid: "id-3453" }, "test", { value: "123" }], "data")`
+> result `data[foo]=5&bar[0]=1&bar[1]=5&bar[2]=9&cid=id-3453`
+
+### Check references' types
+
+Check if reference is an Array. Returns `boolean`
+
+```javascript
+	isArray = function() { /*...*/ };
+```
+
+Check if reference is a String. Returns `boolean`
+
+```javascript
+	isString	= function(val) {};
+```
+
+### Global Object m_store
+
+#### Method **m_store.empty**:
+Returns `true` if v is empty _( undefined, null, 0, "0", false, [], "" )_ else returns `false`;
+if `objectCheck = true` then m_store.empty also will turn true for empty objects.
+
+```javascript
+	m_store.empty	: function(v, objectCheck) { /*...*/ };
+```
+
+#### Method **m_store.is_numeric**:
+```javascript
+	m_store.is_numeric	: function(v) { /*...*/ },
+```
+
+Return `true` if reference `v` is a number or a numeric string
+
+
+#### Method **m_store.type**:
+```javascript
+	m_store.type	: function(val) { /*...*/ }
+```
+
+Detects following type of reference types,
+
+ * return `'null'` for `null` reference
+ * return `'string'` for _String_ reference or instanceof _String_
+ * return `'boolean'` for `boolean` reference
+ * return `'undefined'` for undefined references
+ * return `'function'` for functions
+ * return `'number'` for number
+ * return `'array'` for array objects
+ * return `'regexp'` for Regular Expressions
+ * return `'object'` for Objects
+
+#### Method **m_store.json**:
+
+Following function encodes a reference into JSON object.
+The function will encode different references, even:
+	**functions**, **Infinity**, **-Infinity**, **NaN**, **undefined**
+
+`maxEncodeDepth` if is not defined, default is `5`
+
+```javascript
+	m_store.json	: function(val, maxEncodeDepth ) {}
+```
+
+#### Method **m_store.getv**:
+
+Return parsed JSON value. When `safeMode` is not specified or is _false_,
+the method m_store.getv uses `eval` **(not safe)**
+
+With `safeMode = true` will be used function JSON.parse
+_( JSON parse will not be able to decode **functions**, **Infinity**, **-Infinity** or **NaN** references )_
+
+```javascript
+	m_store.getv	: function(val, safeMode) { /*...*/ }
 ```
 
 
