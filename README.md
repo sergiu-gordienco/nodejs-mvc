@@ -261,9 +261,9 @@ On template Rendering we have following variables
 ```html
 	<img src="data:image/jpeg; base64,{{read-base64:image.png}}" />
 ```
-## Extended template operations regardin prototype
 
 ## Using Extended prototype
+> Extended template operations regarding prototype
 
 ### Escaping HTML chars
 
