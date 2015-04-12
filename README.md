@@ -147,7 +147,7 @@ On template Rendering we have following variables
 
 #### Include another template
 
-```
+```html
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -170,7 +170,7 @@ On template Rendering we have following variables
 
 #### Executing operations in template code
 
-```
+```html
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -200,7 +200,7 @@ On template Rendering we have following variables
 
 #### Isolate a section of code from parsing / noformat
 
-```
+```html
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -218,7 +218,7 @@ On template Rendering we have following variables
 
 #### Adding a script and a css style
 
-```
+```html
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -261,7 +261,7 @@ On template Rendering we have following variables
 ```html
 	<img src="data:image/jpeg; base64,{{read-base64:image.png}}" />
 ```
-
+## Extended template operations regardin prototype
 
 ## Authors
 
