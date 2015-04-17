@@ -364,6 +364,378 @@ _( JSON parse will not be able to decode **functions**, **Infinity**, **-Infinit
 	m_store.getv	: function(val, safeMode) { /*...*/ }
 ```
 
+### String Prototype
+
+#### Subs Method:
+
+```javascript
+	String.prototype.subs	= function(string, offset, length) {}
+```
+> `"abcdefghi".subs(2)` is equal to `"ab"`
+> `"abcdefghi".subs(2,3)` is equal to `"cde"`
+> `"abcdefghi".subs(-2)` is equal to `"hi"`
+> `"abcdefghi".subs(1,-2)` is equal to `"bcdefg"`
+> `"abcdefghi".subs(-4,3)` is equal to `"fgh"`
+
+#### Subs Method:
+
+```javascript
+	String.prototype.toHex = function(utf8String) { /*...*/ return hex_str; }
+	String.prototype.fromHex = function(){ /*...*/ retrun utf8_str; },
+```
+> `"TEST".toHex()` is equal to `"54455354"`
+> `"54455354".fromHex()` is equal to `"TEST"`
+> `"54455354".fromHex()` is equal to `"TEST"`
+
+> **UTF-8** vs Unicode
+> Function `.toHex()` and `.fromHex` is working with **UTF-8** Strings
+but javascript is working with **Unicode**
+> `"€".toHex()` _(Unicode)_ 1 char in HEX is 2 chars `"20ac"`
+> `"20ac".fromHex()` is " ¬"
+
+> So correctly to encode UnicodeText to Hex is
+> "€".utf8encode().toHex() and the result is `"e282ac"`
+> and `"e282ac".fromHex().utf8decode()` is `"€"`
+
+#### Escape HTML
+```javascript
+	String.prototype.toHtmlSimple	= function() { /*...*/ retrun str; },
+	String.prototype.toHtml = function(){ /*...*/ return str;},
+	String.prototype.cleanTags	= function() { /*...*/ return str; }
+```
+
+#### Check if word exists in a list of words separated by `" "`
+```javascript
+	// add class
+	String.prototype.add_Class = function(x){},
+	// remove class
+	String.prototype.del_Class = function(x){},
+	// check is calss exists
+	String.prototype.fnd_Class = function(x){},
+```
+
+#### String letterCase change
+```javascript
+	String.prototype.swp_case = function(){ return str; }
+	String.prototype.ucfirst = function(k){ return str; }
+	String.prototype.lcfirst = function(k){ return str; }
+```
+
+#### Encoding Conversions
+```javascript
+	String.prototype.utf8need = function() { return bool_utf8 }
+	String.prototype.utf8encode = function() { return utf8_str; }
+	String.prototype.utf8decode = function(strUtf) { return unicode_str; }
+	String.prototype.utf8	= String.prototype.utf8encode;
+	String.prototype.unicode = String.prototype.utf8decode;
+
+	String.prototype.escapeHex	= function() { /* ... */ return str; },
+	// on execution: "#$%#$%^".escapeHex()
+	// return "\x23\x24\x25\x23\x24\x25\x5E"
+
+	String.prototype.escape		= function() { return escape(this); },
+	String.prototype.encodeURI	= function() { return encodeURIComponent(this); },
+	String.prototype.unescape	= function() { return unescape(this); },
+	String.prototype.decodeURI	= function() { return decodeURIComponent(this); },
+
+	String.prototype.toRegexp = function(flags){ return reg_exp_object; }
+	// on execution: ".*".toRegexp("g")
+	// returns: /.*/g
+```
+
+#### Parse URL links
+```javascript
+	String.prototype.parseUrlVars	= function(json,params) { retrun data_object; },
+	String.prototype.parseMultipartFormData	= function(json,params,postToUtf8, hexData) { return data_object; },
+	String.prototype.parseUrl	= function(url) { return object; }
+```
+
+**Examples**
+
+##### Parse URL
+```javascript
+	"http://www.example.com/test?nr=1&module=mvc#link-1".parseUrl()
+```javascript
+**Returns**
+```javascript
+	{
+		original	: "http://www.example.com/test?nr=1&module=mvc#link-1",
+		origin	: "http://www.example.com",
+		domain	: "www.example.com",
+		domain_short	: "example.com",
+		pathname: "/test",
+		reqQuery	: "nr=1&module=mvc",
+		protocol: "http",
+		protocoll: "http://"
+	};
+```
+
+##### Parse URL with GET vars
+```javascript
+	"http://www.example.com/test?nr=1&module=mvc&val[x]=5#link-1".parseUrl(true)
+```javascript
+**Returns**
+```javascript
+	{
+		get_vars	: {
+			nr	: 1,
+			module	: mvc,
+			val : {
+				x	: 5
+			}
+		},
+		original	: "http://www.example.com/test?nr=1&module=mvc#link-1",
+		origin	: "http://www.example.com",
+		domain	: "www.example.com",
+		domain_short	: "example.com",
+		pathname: "/test",
+		reqQuery	: "nr=1&module=mvc",
+		protocol: "http",
+		protocoll: "http://"
+	};
+```
+
+##### Parse URL retrieve only GET vars
+```javascript
+	"http://www.example.com/test?nr=1&module=mvc&val[x]=5#link-1".parseUrl("get_vars")
+```javascript
+**Returns**
+```javascript
+	{
+		nr	: 1,
+		module	: mvc,
+		val : {
+			x	: 5
+		}
+	}
+```
+
+##### Parse URL and retrieve only a property from parsed Object
+```javascript
+	"http://www.example.com/test?nr=1&module=mvc&val[x]=5#link-1".parseUrl("origin")
+```
+**Returns**
+```javascript
+	"http://www.example.com"
+```
+----
+```javascript
+	"http://www.example.com/test?nr=1&module=mvc&val[x]=5#link-1".parseUrl("reqQuery")
+```
+**Returns**
+```javascript
+	"nr=1&module=mvc"
+```
+
+#### Match a string using a reg expression described in a string
+```javascript
+	String.prototype.match_str	= function(regexp_str,regexp_flags) { /* ... */ }
+```
+
+#### Make a SHA1 Hash
+```javascript
+	String.prototype.sha1 : function(utf8){return Sha1.hash(this,( utf8 || typeof(utf8) == "undefined" ) ? true : false)},
+
+	// "utf8" indicates that code firstly should be encoded to UTF-8 from UNICODE
+	// default "utf8" argument is true
+```
+**Example:**
+```javascript
+	"password".sha1();
+	// returns
+	"5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+```
+
+#### Make a SHA2 Hash
+```javascript
+	String.prototype.sha256 : function(utf8){return Sha256.hash(this,( utf8 || typeof(utf8) == "undefined" ) ? true : false)},
+
+	// "utf8" indicates that code firstly should be encoded to UTF-8 from UNICODE
+	// default "utf8" argument is true
+```
+**Example:**
+```javascript
+	"password".sha256();
+	// returns
+	"5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+```
+
+#### Make a MD5 Hash
+```javascript
+	String.prototype.md5	: function() { /* ... */},
+```
+**Example:**
+```javascript
+	"password".md5();
+	// returns
+	"5f4dcc3b5aa765d61d8327deb882cf99"
+```
+
+#### For encoding JavaScript UNICODE code into Base64 
+```javascript
+	String.prototype.base64encode	: function() { return btoa(this.utf8need()); },
+```
+
+#### For decoding JavaScript UNICODE code into Base64 
+```javascript
+	String.prototype.base64decode	: function() { return atob(this).unicode(); },
+```
+
+#### For encoding JavaScript UTF8 and ASCII code into Base64 
+```javascript
+	String.prototype.base64encodeClean	: function() { return btoa(this); },
+```
+
+#### For decoding JavaScript UTF8 and ASCII code into Base64 
+```javascript
+	String.prototype.base64decodeClean	: function() { return atob(this); },
+```
+
+#### Encrypt a String using a passKey and TEA algorithm 
+```javascript
+	String.prototype.encryptTea	: function(p) { /* ... */ },
+```
+
+#### Decrypt a String using a passKey and TEA algorithm 
+```javascript
+	String.prototype.decryptTea	: function(p) { /* ... */ },
+```
+
+#### Encrypt a String using a passKey and passlength ( 128, 192, 256 ) in AES algorithm 
+```javascript
+	String.prototype.encryptAes	: function(passKey, passlength) { /* ... */ },
+```
+
+#### Decrypt a String using a passKey and passlength ( 128, 192, 256 ) in AES algorithm 
+```javascript
+	String.prototype.decryptAes	: function(passKey, passlength) { /* ... */ },
+```
+
+#### String Method buildQuery
+```javascript
+	String.prototype.buildQuery	: function() {
+		var r	= /^\s*([a-z]+)\:\s*(\S[^\:]*?|)\s*(\s[a-z]+\:.*|)$/i
+		var s = this, o = { "_keys" : [] }, m, k, f = s.split(/([a-z]+)\:/i);
+		if( m = f[0].match(/^\s*(\S[\s\S]*?)\s*$/) ) {
+			o["_keys"].push("_");
+			o['_']	= m[1];
+		};
+		f = s.substring(f[0].length,s.length);
+		while( m = f.match(r) ) {
+			o[k = m[1].toLowerCase()]	= m[2];
+			o["_keys"].push(k);
+			f = f.split(m[0]).join(m[3]);
+		};
+		return o;
+	},
+```
+**Example:**
+```javascript
+	"test:234 val:foo bar".buildQuery()
+	// returns
+	{
+		"_keys" : ["test", "val"],
+		"test"	: "234",
+		"val"	: "foo bar"
+	}
+```
+#### String Method buildSearchArray
+```javascript
+	String.prototype.buildSearchArray	: function() { /*...*/ return arr; }
+```
+**Example:**
+```javascript
+	"test 'foo bar'".buildSearchArray()
+	// returns
+	["test", "foo bar"]
+```
+
+
+
+
+
+### Array prototype
+
+#### Array method (inArray) - search an element in a array with a defined comparator
+```javascript
+	/*
+		comparator posible values:
+		1. '==='	- check if is strict equal
+		2. '=='		- check if is equal
+		3. a _function_ :
+		function(searched_item,array_item) {
+			return searched_item === array_item
+		}
+	*/
+	Array.prototype.inArray	= function(a,comparator) { /*...*/ },
+```
+
+#### Split an Array by an a value of one octet
+```javascript
+	Array.prototype.split	= function (elem, num, cmp) { /*...*/ },
+```
+
+#### Split an Array by an a section value of one or more bytes
+```javascript
+	Array.prototype.splitSect	= function(elem, num) {
+		return this.split(elem, (num || 0), "indexOfSect");
+	},
+```
+
+#### Convert a Array to an parameter object
+```javascript
+	Array.prototype.toParamObj	= function() { /*...*/ },
+```
+
+#### Remove from Array undefined values
+```javascript
+	Array.prototype.resetArray	= function() {return this.filter(function(v) { return ( typeof(v) != "undefined" ); })},
+```
+
+#### Find IndexOf position of a set of elements in a Array
+```javascript
+	Array.prototype.indexOfSect	= function (searchElement, fromIndex) { /*...*/ }
+```
+
+	Number.prototype.round	= function(k) {	if(k) return parseFloat(this.toFixed(k)); return Math.round(this);	},
+
+	Number.prototype.ceil	= function() {	return Math.ceil(this);	},
+
+	Number.prototype.floor	= function() {	return Math.floor(this);	}
+
+
+### Buffer prototype
+
+#### Split a Buffer by an a value of one octet
+```javascript
+	Buffer.prototype.split	= function (elem, num, cmp) {
+		/* ... */
+		return lines;
+	}
+```
+
+#### Split a Buffer by an a section value of one or more bytes
+```javascript
+	Buffer.prototype.splitSect	= function(elem, num) {
+		return this.split(elem, (num || 0), "indexOfSect");
+	}
+```
+
+
+#### Converts a Buffer in a params object
+```javascript
+	Buffer.prototype.toParamObj	= function() { /*...*/ },
+```
+
+#### Find IndexOf a byte in a Buffer
+```javascript
+	Buffer.prototype.indexOf	= function(searchSequence, fromIndex) { /*...*/ },
+```
+
+#### Find IndexOf a section of bytes in a Buffer
+```javascript
+	Buffer.prototype.indexOfSect	= function(searchSequence, fromIndex) { /*...*/ },
+```
 
 ## Authors
 
