@@ -88,6 +88,16 @@ Fast and simple MCV in nodejs
 
 	// attaching your events :)
 	io.on('connection', function(socket){
+
+		/**
+		 * session and coockies are stored in:
+		 */
+		
+		console.log(data.session);
+		console.log(data.cookies);
+		console.log(data.signedCookies);
+
+
 		socket.on('event', function(data){});
 		socket.on('disconnect', function(){});
 	});
