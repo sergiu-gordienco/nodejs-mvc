@@ -1,7 +1,8 @@
 
 
 
-var app	= require("nodejs-mvc");
+// var app = require("nodejs-mvc");
+var app	= require(__dirname + "/../../index.js");
 var appVars	= app.getVars();
 
 var server	= require("http").createServer(function( request, response, next ) {
