@@ -77,6 +77,7 @@ Fast and simple MCV in nodejs
 						client.handshake.session.touch().save();
 					});
 				}, 2000);
+			}
 		});
 
 		client.on('disconnect', function () {
