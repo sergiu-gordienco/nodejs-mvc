@@ -1,6 +1,6 @@
 {
   "name": "nodejs-mvc",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "MVC pattern application in nodejs",
   "main": "index.js",
   "scripts": {

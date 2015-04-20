@@ -93,9 +93,9 @@ Fast and simple MCV in nodejs
 		 * session and coockies are stored in:
 		 */
 		
-		console.log(data.session);
-		console.log(data.cookies);
-		console.log(data.signedCookies);
+		console.log(socket.session);
+		console.log(socket.cookies);
+		console.log(socket.signedCookies);
 
 
 		socket.on('event', function(data){});
