@@ -23,4 +23,6 @@ app.runBootstrap();
 
 server.listen(8080);
 
+console.log("Lunching server on port 8080");
+console.log("test on: http://localhost:8080");
 
