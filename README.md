@@ -77,6 +77,7 @@ Fast and simple MCV in nodejs
 						client.handshake.session.touch().save();
 					});
 				}, 2000);
+			}
 		});
 
 		client.on('disconnect', function () {
@@ -88,13 +89,93 @@ Fast and simple MCV in nodejs
 
 	// attaching your events :)
 	io.on('connection', function(socket){
+
+		/**
+		 * session and cookies are stored in:
+		 */
+		
+		console.log(socket.session);
+		console.log(socket.cookies);
+		console.log(socket.signedCookies);
+
+
 		socket.on('event', function(data){});
 		socket.on('disconnect', function(){});
 	});
 ```
 
+### Application adding controllers and actions
 
 > A demo application you will see in ./demo/mvc-sample/app.js
+
+Defining the folder were a stored controllers: `app.setModulePath("app/modules");
+
+File structure of an controller and actions:
+```
+    app
+    ⊢  modules
+        ⊢ index            # folder for controller "index"
+           ⊢ controller
+              ⊢ index.js   # default action
+              ⊢ create.js  # default other action named "create"
+```
+
+#### Actions's file "app/modules/index.js"
+
+```javascript
+	module.exports	= {
+		"public"	: true,	// define action as public default:false
+		"postData"	: false,	// if `true` the service will wait while POST data
+								// will be loaded in request object
+								// POST data will be returned by request.postVars()
+								// FILES will be returned by request.fileVars()
+		"maxPostSize"	: 1024*1024, // default 1Mb
+		"autoClose"	: false,	// action will close itself with response.end();
+								// may be set true if action is sync without callbacks
+		capture	: function( request, response, app, controller, action ) {
+			// redner the view index
+			controller.render( response, 'index', { username: "sergiu gordienco" });
+		}
+	};
+```
+
+#### Controllers's Methods
+```javascript
+	module.exports	= {
+		"public"	: false,	// define action as public default:false
+		capture	: function (request, response, app, controller, action) {
+			// list controller methods
+			app.debug(true);
+			app.console.log(controller);
+			response.end();
+		}
+	};
+```
+
+ * `controller.getViewer()`	- returns viewer Object
+ * `controller.getName()`	- returns controller name
+ * `controller.getView( str_viewName )`	- returns view `Object` or `false` if it don't exists
+ * `controller.viewExists( str_viewName ) - returns Boolean `true` if view exists else returns `false`
+ * `controller.render( response, viewName, parameters )`	- if viewExists render view else doesn't do any thing
+ * `controller.removeView( viewName )`	- removes view if it exists under an action on success return `true` else returns `false`
+ * `controller.getAction( actionName )`	- return a action `Object` or `false`
+ * `controller.actionExists( actionName )`	- return `true` if action exists
+ * `controller.addAction( actionName, configActionObject )`	- add action to controller if action already exists returns `false`
+ * `controller.removeAction( actionName )`	- removes action from controller on success returns `true` else `false`
+ * `controller.getVars()`	- return controllers vars object that can be used by all functions, and it is common for all user sessions
+
+#### Action's Methods
+```javascript
+	action = controller.getAction("library");
+```
+
+ * `action.getController()`	- returns controller object
+ * `action.getName()`	- return action name
+ * `action.isPublic()`	- returns `true` if `public` is `true` else `false`
+ * `action.usePostData()`	- returns `true` if `postData` is `true` else `false`
+ * `action.maxPostSize(numberBytes)` - if `numberBytes` is a number it updates `maxPostSize` parameter, even function returns current maxPostSize
+ * `action.autoClose()` - returns true if action has autoClose enabled otherwise returns false
+ * `action.run( request, response )` - run a action and returns `true` on success else returns `Error` object
 
 ## Templates FaceboxTPL
 

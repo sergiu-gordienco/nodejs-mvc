@@ -117,6 +117,7 @@ var _config	= {
 	// cookie secret
 	cookieHandler	: false,
 	cookieSecret	: false, // default use session
+	quiteHandler	: true,
 	// other config
 	controllers	: {},
 	httpStates	: {},
@@ -184,9 +185,14 @@ var _config	= {
 			});
 		};
 		root.cookieHandler(request, response, function (err) {
-			if (err && next) {
-				return next(err);
+			if (err) {
+				if (!root.quiteHandler) {
+					throw err;
+				} else {
+					console.error(err);
+				}
 			};
+			// console.log("response object", response, err);
 			// console.log("Cookies", arguments);
 			if (request)
 				request.secret	= root.cookieSecret || root.sessionSecret;
@@ -194,15 +200,29 @@ var _config	= {
 				response.req	= request;
 			responseCookie(response);
 			root.sessionHandler(request, response, function (err) {
-				if (err && next) {
-					return next(err);
+				if (err) {
+					if (typeof(next) === "function") {
+						return next(err, {
+							request	: request,
+							response	: response
+						});
+					} else {
+						if (!root.quiteHandler) {
+							throw err;
+						} else {
+							console.error(err);
+						}
+					}
+				} else {
+					if (typeof(next) === "function") {
+						return next(request, response);
+					} else {
+						console.error(new Error("No request handler"));
+					}
 				};
 				// console.log("Session", arguments);
 				// console.log("Request", request);
 				// console.log("Response", response);
-				if (next) {
-					next();
-				}
 			});
 		});
 	},

@@ -1,7 +1,8 @@
 
 
 
-var app	= require("nodejs-mvc");
+// var app = require("nodejs-mvc");
+var app	= require(__dirname + "/../../index.js");
 var appVars	= app.getVars();
 
 var server	= require("http").createServer(function( request, response, next ) {
@@ -137,6 +138,10 @@ io.on('connection', function (socket) {
   });
 });
 
+
+
 server.listen(8080);
 
+console.log("Lunching server on port 8080");
+console.log("test on: http://localhost:8080");
 
