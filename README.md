@@ -177,6 +177,169 @@ File structure of an controller and actions:
  * `action.autoClose()` - returns true if action has autoClose enabled otherwise returns false
  * `action.run( request, response )` - run a action and returns `true` on success else returns `Error` object
 
+
+### Session vs SessionDyn
+
+Using a session in a action:
+```javascript
+module.exports	= {
+	public	: 1,
+	capture	: function (request, response, app, controller, action) {
+		var sess = request.session
+		if (sess.views) {
+			sess.views++
+			response.setHeader('Content-Type', 'text/html')
+			response.write('<p>views: ' + sess.views + '</p>')
+			response.write('<p>expires in: ' + (sess.cookie.maxAge / 1000) + 's</p>')
+			response.end()
+		} else {
+		sess.views = 1
+			response.end('welcome to the session demo. refresh!')
+		}
+	}
+}
+```
+
+#### request.session
+
+To store or access session data, simply use the request property `request.session`,
+which is (generally) serialized as JSON by the store, so nested objects
+are typically fine. For example below is a user-specific view counter:
+
+> more info on [session documentation](https://github.com/expressjs/session)
+
+
+#### request.session.regenerate()
+
+To regenerate the session simply invoke the method, once complete
+a new SID and `Session` instance will be initialized at `request.session`.
+
+```js
+	request.session.regenerate(function(err) {
+		// will have a new session here
+	})
+```
+
+#### request.session.destroy()
+
+Destroys the session, removing `request.session`, will be re-generated next request.
+
+```js
+	request.session.destroy(function(err) {
+		// cannot access session here
+	})
+```
+
+#### request.session.reload()
+
+Reloads the session data.
+
+```js
+	request.session.reload(function(err) {
+		// session updated
+	})
+```
+
+#### request.session.save()
+
+```js
+	request.session.save(function(err) {
+		// session saved
+	})
+```
+
+#### request.session.touch()
+
+Updates the `.maxAge` property. Typically this is
+not necessary to call, as the session middleware does this for you.
+
+#### request.session.cookie
+
+Each session has a unique cookie object accompany it. This allows
+you to alter the session cookie per visitor. For example we can
+set `request.session.cookie.expires` to `false` to enable the cookie
+to remain for only the duration of the user-agent.
+
+#### request.session.cookie.maxAge
+
+Alternatively `request.session.cookie.maxAge` will return the time
+remaining in milliseconds, which we may also re-assign a new value
+to adjust the `.expires` property appropriately. The following
+are essentially equivalent
+
+```js
+var hour = 3600000
+request.session.cookie.expires = new Date(Date.now() + hour)
+request.session.cookie.maxAge = hour
+```
+
+For example when `maxAge` is set to `60000` (one minute), and 30 seconds
+has elapsed it will return `30000` until the current request has completed,
+at which time `request.session.touch()` is called to reset `request.session.maxAge`
+to its original value.
+
+```js
+request.session.cookie.maxAge // => 30000
+```
+
+### SessionDyn `request.sessionDyn`
+
+**sessionDyn** is much faster then other sessions, but it is stores object references in memory,
+it is very optimized, and practically, doesn't store additional metadata.
+
+ * `request.sessionDyn.ip()` - returns current user ip
+ * `request.sessionDyn.host()` - returns `request.headers.host`
+ * `request.sessionDyn.origin()` - returns `request.headers.origin`;
+ * `request.sessionDyn.hashSession( sessionId )` - returns hashed `sessionId`
+ * `request.sessionDyn.genSessionId()` - returns a new valid sessionId
+ * `request.sessionDyn.sessionId()` - returns current sessionId
+ * `request.sessionDyn.setExpire( secconds, sessionId )` - set session expire timeout, if `sessionId` is undefined it will update current session
+ * `request.sessionDyn.getExpire( sessionId )` - get session expire timestamp, if `sessionId` is undefined it will work with current session
+ * `request.sessionDyn.getCreated( sessionId )` - get creation `timestamp` for `sessionDyn` with id equal to `sessionId`
+ * `request.sessionDyn.sessionExists( sessionId )`		: function( sessionId ) - retruns true if exists a `sessionDyn` with iq equal with `sessionId`
+ * `request.sessionDyn.getVars( sessionId )` - will return variables from a `sessionDyn` if it exists, if `sessionId` is `undefined` will return variables from current `sessionDyn` if sessionExists else retruns `false`
+
+### Request methods
+
+ * `request.headers`   - object that contains headers `{ "header name" : "header value", .... }`
+ * `request.urlObject` - object that resulted on parsing current url
+```javascript
+    var url = "https://www.example.com/path/to-an-url?get=references#hash-link";
+    console.log(url.parseURL(true));
+```
+
+**Result:**
+```javascript
+    {
+        "original"  : "https://www.example.com/path/to-an-url?get=references#hash-link",
+        "origin"    : "https://www.example.com","domain":"www.example.com",
+        "domain_short"  : "example.com",
+        "pathname"  : "/path/to-an-url",
+        "reqQuery"  : "get=references",
+        "protocol"  : "https",
+        "protocoll" : "https://",
+        "url"       : "www.example.com/path/to-an-url?get=references#hash-link",
+        "url_p"     : "https://www.example.com/path/to-an-url?get=references#hash-link",
+        "isIp"      : "www.example.com",
+        "get_vars"  : {
+            "get"   : "references"
+        }
+    }
+```
+
+ * `request.controller`         - current controller name
+ * `request.controllerAction`   - current action name
+ * `request.params`             - current parameters array
+ * `request.postData`           - `Buffer Object` where was stored original POST data
+ * `request.postVars()`         - returns `POST` vars stored in a object
+ * `request.fileVars()`         - returns `FILE` vars stored in a object
+ * `request.sessionDyn`         - returns `sessionDyn Object`
+ * `request.session`            - returns `session Object`
+ * `request.redirect( url, status )` - redirects to a specified url with a specified status ( default `status = 302` )
+ * `request.postDataState`      - if `POST` data length is less that `action.maxPostSize` then it is `true` else `false`
+
+### Response Methods
+
 ## Templates FaceboxTPL
 
 ### To view parameters that are send have following structure
