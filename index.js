@@ -215,6 +215,14 @@ var _config	= {
 					}
 				} else {
 					if (typeof(next) === "function") {
+						request.sessionDyn	= new sessionInstance( request, response, appInstance, {
+								expire			: root.sessionExpire,
+								cookieName		: root.sessionCookieName,
+								cookieDomain	: root.sessionCookieDomain
+							} );
+						if( root.sessionExpire && root.sessionAutoUpdate ) {
+							request.sessionDyn.setExpire( root.sessionExpire );
+						}
 						return next(request, response);
 					} else {
 						console.error(new Error("No request handler"));
@@ -274,14 +282,16 @@ var _config	= {
 			}
 			return urlObj.file_vars;
 		};
-		request.sessionDyn	= new sessionInstance( request, response, appInstance, {
-				expire			: root.sessionExpire,
-				cookieName		: root.sessionCookieName,
-				cookieDomain	: root.sessionCookieDomain
-			} );
-		if( root.sessionExpire && root.sessionAutoUpdate ) {
-			request.sessionDyn.setExpire( root.sessionExpire );
-		}
+		// if (!("sessionDyn" in request)) {
+		// 	request.sessionDyn	= new sessionInstance( request, response, appInstance, {
+		// 			expire			: root.sessionExpire,
+		// 			cookieName		: root.sessionCookieName,
+		// 			cookieDomain	: root.sessionCookieDomain
+		// 		} );
+		// 	if( root.sessionExpire && root.sessionAutoUpdate ) {
+		// 		request.sessionDyn.setExpire( root.sessionExpire );
+		// 	}
+		// }
 		response.redirect	= function(url, status) {
 			return root.redirect( response, url, ( status || 302 ) );
 		}
