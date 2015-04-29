@@ -5,7 +5,14 @@ var _classes	= {
 	fs		: require('fs'),
 	url		: require('url'),
 	os		: require('os'),
-	merge	: require('utils-merge'),
+	merge	: function(a, b) {
+		if (a && b) {
+			for (var key in b) {
+				a[key] = b[key];
+			}
+		}
+		return a;
+	},
 	cookie	: require('cookie'),
 	cookieParser	: require('cookie-parser'),
 	cookieSignature	: require('cookie-signature'),

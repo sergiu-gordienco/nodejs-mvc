@@ -6,6 +6,13 @@
 </head>
 <body>
 	It works !
-	PageViews: {{ vars.pageviews }}
+	<br />
+	<code>
+		<b>PageViews:</b> {{ vars.pageviews }}
+		<br />
+		<b>SessionDyn Id:</b> {{ vars.sessionDynId }} <i>- Fast CrossSession Memory Object</i>
+		<br />
+		<b>Session Id:</b> {{ vars.sessionId }} <i>- Default NodeJs Session Object</i>
+	</code>
 </body>
 </html>
