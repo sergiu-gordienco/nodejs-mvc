@@ -76,13 +76,24 @@ module.exports	= function( req, res, app, options ) {
 	};
 	var _functions = {
 		ip	: function() {
-			return req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress;
+			var er;
+			var r = undefined;
+			try {
+				r = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress || undefined;
+			} catch (er) {};
+			return r;
 		},
 		host	: function() {
-			return ( req.headers.host || "" );
+			if (req.headers) {
+				return ( req.headers.host || "" );
+			}
+			return "";
 		},
 		origin	: function() {
-			return ( req.headers.origin || "" );
+			if (req.headers) {
+				return ( req.headers.origin || "" );
+			}
+			return "";
 		},
 		hashSession		: function( session ) {
 			return (""+session).sha256();
@@ -92,7 +103,7 @@ module.exports	= function( req, res, app, options ) {
 		},
 		sessionId	: function() {
 			var ssid	= false;
-			ssid	= _config.ssid || req.signedCookies[_config.cookieName] || req.signedCookies[_config.cookieName] || req.getVars().ssid || "";
+			ssid	= _config.ssid || req.signedCookies[_config.cookieName] || req.signedCookies[_config.cookieName] /*|| req.getVars().ssid*/ || "";
 			if( !ssid ) {
 				ssid	= _functions.hashSession(_functions.genSessionId());
 				_config.ssid	= ssid;
