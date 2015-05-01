@@ -196,7 +196,7 @@ var _config	= {
 				if (!root.quiteHandler) {
 					throw err;
 				} else {
-					console.error(err);
+					appInstance.console.error(err);
 				}
 			};
 			// console.log("response object", response, err);
@@ -217,7 +217,7 @@ var _config	= {
 						if (!root.quiteHandler) {
 							throw err;
 						} else {
-							console.error(err);
+							appInstance.console.error(err);
 						}
 					}
 				} else {
@@ -232,7 +232,7 @@ var _config	= {
 						}
 						return next(request, response);
 					} else {
-						console.error(new Error("No request handler"));
+						appInstance.console.error(new Error("No request handler"));
 					}
 				};
 				// console.log("Session", arguments);
@@ -368,19 +368,32 @@ var _appInstanceVars	= {};
 var appInstance			= {
 	console		: {
 		log	: function() {
-			if (_config.debug)
-				console.log(arguments);
+			if (_config.debug) {
+				var args = Array.prototype.slice.call(arguments);
+				console.apply(console, args);
+			}
 		},
 		info	: function() {
-			if (_config.debug)
-				console.info(arguments);
+			if (_config.debug) {
+				var args = Array.prototype.slice.call(arguments);
+				args.unshift("\033[0;47;30m");
+				args.push("\033[0m");
+				console.apply(console, args);
+			}
 		},
 		warn	: function() {
-			if (_config.debug)
-				console.warn(arguments);
+			if (_config.debug) {
+				var args = Array.prototype.slice.call(arguments);
+				args.unshift("\033[0;40;33m");
+				args.push("\033[0m");
+				console.apply(console, args);
+			}
 		},
 		error	: function() {
-			console.error(arguments);
+			var args = Array.prototype.slice.call(arguments);
+			args.unshift("\033[0;40;31m");
+			args.push("\033[0m");
+			console.apply(console, args);
 		}
 	},
 	debug		: function( state ) {
@@ -564,7 +577,7 @@ moduleObject.sessionManager					= new sessionInstance(true);
 
 
 appInstance._events.onError	= function( error ) {
-	console.error( error );
+	appInstance.console.error( error );
 };
 
 module.exports	= moduleObject;
