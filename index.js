@@ -171,8 +171,39 @@ var responseCookie	= function (res, req) {
 		);
 	};
 
-	res.staticResource	= function (req, res, next) {
-
+	res.staticResource	= function (filePath, fileName, callback, req) {
+		var err;
+		try {
+			_classes.fs.stat(filePath, function (err, stat) {
+				if (err) {
+					appInstance._events.onError(err, { res: res, status : 500, end : true });
+				} else {
+					var etag = stat.size + '-' + Date.parse(stat.mtime);
+					res.setHeader('Last-Modified', stat.mtime);
+					if (req && req.headers['if-none-match'] === etag) {
+						res.statusCode = 304;
+						res.end();
+					} else {
+						res.setHeader('Content-Length', stat.size);
+						res.setHeader('ETag', etag);
+						res.statusCode = 200;
+						res.pipe(filePath, ( callback || function (err) {
+								if (err) {
+									appInstance._events.onError(err, { res: res, status : 404, end : true });
+								} else {
+									res.end();
+								}
+							})
+						);
+					}
+				}
+			});
+		} catch (err) {};
+		if (err) {
+			try {
+				appInstance._events.onError(err, { res: res, status : 500, end : true });
+			} catch (err) {};
+		}
 	};
 };
 
@@ -219,7 +250,7 @@ var _config	= {
 	},
 	handleStaticResponse	: function( request, response, path ) {
 		var url	= request.url.replace(/[\x23\?][\s\S]*$/, '');
-		response.download((path || _config.publicPath) + url);
+		response.staticResource((path || _config.publicPath) + url, undefined, undefined, request);
 		// _classes.fs.readFile( _config.publicPath + url, function (err,data) {
 		// 	if (err) {
 		// 		appInstance._events.onError(err, { res: response, status : 404, end : true });
