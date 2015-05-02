@@ -105,6 +105,75 @@ var responseCookie	= function (res, req) {
 		this.set('Set-Cookie', headerVal);
 		return this;
 	};
+
+	res.pipe = function (filePath, callback) {
+		var err;
+		try {
+			var stat = _classes.fs.statSync(filePath);
+
+			var readStream = _classes.fs.createReadStream(filePath);
+			readStream.on('data', function(data) {
+				var flushed = res.write(data);
+				// Pause the read stream when the write stream gets saturated
+				if(!flushed)
+					readStream.pause();
+			});
+
+			// This catches any errors that happen while creating the readable stream (usually invalid names)
+			readStream.on('error', function(err) {
+				if (callback) {
+					callback(err);
+				}
+			});
+
+			// // This will wait until we know the readable stream is actually valid before piping
+			// readStream.on('open', function () {
+			// 	// This just pipes the read stream to the response object (which goes to the client)
+			// 	readStream.pipe(res);
+			// });
+
+			res.on('drain', function() {
+				// Resume the read stream when the write stream gets hungry 
+				readStream.resume();
+			});
+
+			readStream.on('end', function() {
+				if (callback) {
+					callback(undefined);
+				}
+			});
+
+		} catch (err) {
+			if (callback) {
+				callback(err);
+			}
+		}
+	};
+
+	res.download	= function (filePath, fileName, callback) {
+		res.writeHead(200, {
+			'Content-Type'	: 'application/octet-stream',
+			'Content-Disposition'	: 'attachment; filename="'+((function (path, file) {
+				if (typeof(file) === "string") {
+					return file;
+				} else {
+					return filePath.replace(/^[\s\S]*[\/\\]/, '');
+				}
+			})(filePath, fileName))+'"'
+		});
+		res.pipe(filePath, ( callback || function (err) {
+				if (err) {
+					appInstance._events.onError(err, { res: res, status : 404, end : true });
+				} else {
+					res.end();
+				}
+			})
+		);
+	};
+
+	res.staticResource	= function (req, res, next) {
+
+	};
 };
 
 
@@ -148,34 +217,33 @@ var _config	= {
 		response.end('Max Post File Size');
 		return false;	// if false action processing is broken
 	},
-	handleStaticResponse	: function( request, response ) {
-		var url	= request.url.replace(/\?[\s\S]*$/, '');
-		_classes.fs.readFile( _config.publicPath + url, function (err,data) {
-			if (err) {
-				response.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
-				response.end(JSON.stringify(err));
-			return;
-			} else {
-				_classes.fs.stat(_config.publicPath + url, function (err, stat) {
-					if (err) {
-						response.statusCode = 500;
-						response.end();
-					} else {
-						var etag = stat.size + '-' + Date.parse(stat.mtime);
-						response.setHeader('Last-Modified', stat.mtime);
-						if (request.headers['if-none-match'] === etag) {
-							response.statusCode = 304;
-							response.end();
-						} else {
-							response.setHeader('Content-Length', data.length);
-							response.setHeader('ETag', etag);
-							response.statusCode = 200;
-							response.end(data);
-						}
-					}
-				});
-			}
-		});
+	handleStaticResponse	: function( request, response, path ) {
+		var url	= request.url.replace(/[\x23\?][\s\S]*$/, '');
+		response.download((path || _config.publicPath) + url);
+		// _classes.fs.readFile( _config.publicPath + url, function (err,data) {
+		// 	if (err) {
+		// 		appInstance._events.onError(err, { res: response, status : 404, end : true });
+		// 	return;
+		// 	} else {
+		// 		_classes.fs.stat(_config.publicPath + url, function (err, stat) {
+		// 			if (err) {
+		// 				appInstance._events.onError(err, { res: response, status : 500, end : true });
+		// 			} else {
+		// 				var etag = stat.size + '-' + Date.parse(stat.mtime);
+		// 				response.setHeader('Last-Modified', stat.mtime);
+		// 				if (request.headers['if-none-match'] === etag) {
+		// 					response.statusCode = 304;
+		// 					response.end();
+		// 				} else {
+		// 					response.setHeader('Content-Length', data.length);
+		// 					response.setHeader('ETag', etag);
+		// 					response.statusCode = 200;
+		// 					response.end(data);
+		// 				}
+		// 			}
+		// 		});
+		// 	}
+		// });
 	},
 	handleServerMidleware	: function (request, response, next) {
 		var root	= _config;
@@ -301,7 +369,7 @@ var _config	= {
 		// }
 		response.redirect	= function(url, status) {
 			return root.redirect( response, url, ( status || 302 ) );
-		}
+		};
 		var state = root.onRequestCapture( request, response, appInstance );
 		if( state == 'close' ) {
 			response.end();
@@ -370,7 +438,7 @@ var appInstance			= {
 		log	: function() {
 			if (_config.debug) {
 				var args = Array.prototype.slice.call(arguments);
-				console.apply(console, args);
+				console.log.apply(console, args);
 			}
 		},
 		info	: function() {
@@ -378,7 +446,7 @@ var appInstance			= {
 				var args = Array.prototype.slice.call(arguments);
 				args.unshift("\033[0;47;30m");
 				args.push("\033[0m");
-				console.apply(console, args);
+				console.log.apply(console, args);
 			}
 		},
 		warn	: function() {
@@ -386,14 +454,14 @@ var appInstance			= {
 				var args = Array.prototype.slice.call(arguments);
 				args.unshift("\033[0;40;33m");
 				args.push("\033[0m");
-				console.apply(console, args);
+				console.log.apply(console, args);
 			}
 		},
 		error	: function() {
 			var args = Array.prototype.slice.call(arguments);
 			args.unshift("\033[0;40;31m");
 			args.push("\033[0m");
-			console.apply(console, args);
+			console.log.apply(console, args);
 		}
 	},
 	debug		: function( state ) {
@@ -556,6 +624,7 @@ moduleObject._functions	= {
 };
 
 
+appInstance.handleStaticResponse			= _config.handleStaticResponse;
 appInstance._functions.isValidIdentifier	= moduleObject._functions.isValidIdentifier;
 appInstance.structure						= moduleObject;
 appInstance.sessionExpire					= moduleObject.sessionExpire;
@@ -567,6 +636,7 @@ appInstance.getLibPath						= moduleObject.getLibPath;
 appInstance.getVendorPath					= moduleObject.getVendorPath;
 appInstance.viewer							= viewerInstance;
 appInstance.templateManger					= new templateMangerInstance( appInstance.viewer );
+moduleObject.handleStaticResponse			= _config.handleStaticResponse;
 moduleObject.debug							= appInstance.debug;
 moduleObject.console						= appInstance.console;
 moduleObject.templateManger					= appInstance.templateManger;
@@ -574,10 +644,23 @@ moduleObject.getVars						= appInstance.getVars;
 moduleObject.onRequestCapture				= appInstance.onRequestCapture;
 moduleObject.onMaxPostSize					= appInstance.onMaxPostSize;
 moduleObject.sessionManager					= new sessionInstance(true);
+moduleObject._events						= appInstance._events;
 
 
-appInstance._events.onError	= function( error ) {
+appInstance._events.onError	= function( error, config ) {
 	appInstance.console.error( error );
+	if (config) {
+		if (config.res) {
+			if (config.status) {
+				if (!config.res.headersSent) {
+					config.res.statusCode	= config.status;
+				}
+			}
+			if (config.end) {
+				config.res.end(error.message || err);
+			}
+		}
+	}
 };
 
 module.exports	= moduleObject;

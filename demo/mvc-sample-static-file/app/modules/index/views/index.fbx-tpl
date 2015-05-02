@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Wellcome</title>
+</head>
+<body>
+	It works !
+	<br />
+	<code>
+		<b>PageViews:</b> {{ vars.pageviews }}
+		<br />
+		<b>SessionDyn Id:</b> {{ vars.sessionDynId }} <i>- Fast CrossSession Memory Object</i>
+		<br />
+		<b>Session Id:</b> {{ vars.sessionId }} <i>- Default NodeJs Session Object</i>
+	</code>
+	<br />
+	<img src="screenshot.png" style="max-width: 50%;" />
+</body>
+</html>
