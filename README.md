@@ -29,6 +29,40 @@ Fast and simple MCV in nodejs
 	server.listen(8080);
 ```
 
+### Starting an Application with an additional `static server`
+
+```javascript
+
+	var app	= require("nodejs-mvc");
+	var appVars	= app.getVars();
+
+	app.sessionCookieName("ssid");
+	app.sessionDynCookieName("ssid");
+	app.sessionDynCookieDomain(false);
+	app.sessionDynAutoUpdate(true);
+	app.sessionDynExpire(60*60*2);
+
+	app.setRootPath( __dirname );
+	app.setPublicPath( __dirname+'/public');
+	app.setModulePath( __dirname+'/app/modules');
+
+	var server	= require("http").createServer(function( request, response, next ) {
+		if (request.url.match(/(\/|)(styles|images|scripts)/)) {
+			// will be search files in public path
+			app.handleStaticResponse(request, response);
+		} else if (request.url.match(/(\/|)(node-docs)/)) {
+			// will be search static files in a custom path
+			app.handleStaticResponse(request, response, "/var/www/node-js/");
+		} else {
+			app.handleServerResponse( request, response, next );
+		}
+	});
+
+	app.runBootstrap();
+
+	server.listen(8080);
+```
+
 ### [Section 2] Attaching a "socket.io" to server and assign SESSION and COOKIES
 
 ```javascript
