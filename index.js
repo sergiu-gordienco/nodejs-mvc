@@ -16,7 +16,8 @@ var _classes	= {
 	cookie	: require('cookie'),
 	cookieParser	: require('cookie-parser'),
 	cookieSignature	: require('cookie-signature'),
-	expressSession	: require('express-session')
+	expressSession	: require('express-session'),
+	extensions		: require(__dirname+"/objects/extensions.js")
 };
 
 
@@ -151,15 +152,16 @@ var responseCookie	= function (res, req) {
 	};
 
 	res.download	= function (filePath, fileName, callback) {
-		res.writeHead(200, {
-			'Content-Type'	: 'application/octet-stream',
-			'Content-Disposition'	: 'attachment; filename="'+((function (path, file) {
+		var file	= (((function (path, file) {
 				if (typeof(file) === "string") {
 					return file;
 				} else {
 					return filePath.replace(/^[\s\S]*[\/\\]/, '');
 				}
-			})(filePath, fileName))+'"'
+			})(filePath, fileName)) || "file");
+		res.writeHead(200, {
+			'Content-Type'	: _classes.extensions.mime(file),
+			'Content-Disposition'	: 'attachment; filename="'+file+'"'
 		});
 		res.pipe(filePath, ( callback || function (err) {
 				if (err) {
@@ -184,6 +186,7 @@ var responseCookie	= function (res, req) {
 						res.statusCode = 304;
 						res.end();
 					} else {
+						res.setHeader('Content-Type', _classes.extensions.mime(fileName || filePath || "file"));
 						res.setHeader('Content-Length', stat.size);
 						res.setHeader('ETag', etag);
 						res.statusCode = 200;
@@ -250,7 +253,18 @@ var _config	= {
 	},
 	handleStaticResponse	: function( request, response, path ) {
 		var url	= request.url.replace(/[\x23\?][\s\S]*$/, '');
-		response.staticResource((path || _config.publicPath) + url, undefined, undefined, request);
+		_classes.fs.stat((path || _config.publicPath) + url, function (err, stat) {
+			if (err) {
+				appInstance._events.onError(err, { res: response, status : 404, end : true });
+			} else {
+				if (stat.isDirectory()) {
+					response.staticResource((path || _config.publicPath) + url + "/index.html", undefined, undefined, request);
+				} else {
+					response.setHeader('Content-Type', 'text/html');
+					response.staticResource((path || _config.publicPath) + url, undefined, undefined, request);
+				}
+			}
+		});
 		// _classes.fs.readFile( _config.publicPath + url, function (err,data) {
 		// 	if (err) {
 		// 		appInstance._events.onError(err, { res: response, status : 404, end : true });
