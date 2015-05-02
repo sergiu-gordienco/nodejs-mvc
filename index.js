@@ -643,9 +643,7 @@ var moduleObject	= {
 		} else {
 			return viewerInstance.getEnvVars();
 		}
-	},
-	handleServerResponse	: _config.handleServerResponse,
-	handleServerMidleware	: _config.handleServerMidleware
+	}
 };
 
 moduleObject._functions	= {
@@ -655,7 +653,10 @@ moduleObject._functions	= {
 };
 
 
+appInstance.handleServerResponse			= _config.handleServerResponse;
+appInstance.handleServerMidleware			= _config.handleServerMidleware;
 appInstance.handleStaticResponse			= _config.handleStaticResponse;
+appInstance.handleServerResponseLogic		= _config.handleServerResponseLogic;
 appInstance._functions.isValidIdentifier	= moduleObject._functions.isValidIdentifier;
 appInstance.structure						= moduleObject;
 appInstance.sessionExpire					= moduleObject.sessionExpire;
@@ -667,7 +668,10 @@ appInstance.getLibPath						= moduleObject.getLibPath;
 appInstance.getVendorPath					= moduleObject.getVendorPath;
 appInstance.viewer							= viewerInstance;
 appInstance.templateManger					= new templateMangerInstance( appInstance.viewer );
+moduleObject.handleServerResponse			= _config.handleServerResponse;
+moduleObject.handleServerMidleware			= _config.handleServerMidleware;
 moduleObject.handleStaticResponse			= _config.handleStaticResponse;
+moduleObject.handleServerResponseLogic		= _config.handleServerResponseLogic;
 moduleObject.debug							= appInstance.debug;
 moduleObject.console						= appInstance.console;
 moduleObject.templateManger					= appInstance.templateManger;

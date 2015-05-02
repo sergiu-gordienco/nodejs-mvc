@@ -47,15 +47,17 @@ Fast and simple MCV in nodejs
 	app.setModulePath( __dirname+'/app/modules');
 
 	var server	= require("http").createServer(function( request, response, next ) {
-		if (request.url.match(/(\/|)(styles|images|scripts)/)) {
-			// will be search files in public path
-			app.handleStaticResponse(request, response);
-		} else if (request.url.match(/(\/|)(node-docs)/)) {
-			// will be search static files in a custom path
-			app.handleStaticResponse(request, response, "/var/www/node-js/");
-		} else {
-			app.handleServerResponse( request, response, next );
-		}
+		app.handleServerMidleware(request, response, function () {
+			if (request.url.match(/(\/|)(styles|images|scripts)/)) {
+				// will be search files in public path
+				app.handleStaticResponse(request, response);
+			} else if (request.url.match(/(\/|)(node-docs)/)) {
+				// will be search static files in a custom path
+				app.handleStaticResponse(request, response, "/var/www/node-js/");
+			} else {
+				app.handleServerResponseLogic( request, response, next );
+			}
+		});
 	});
 
 	app.runBootstrap();
