@@ -343,7 +343,7 @@ var _config	= {
 						if( root.sessionExpire && root.sessionAutoUpdate ) {
 							request.sessionDyn.setExpire( root.sessionExpire );
 						}
-						return next(request, response);
+						return next();
 					} else {
 						appInstance.console.error(new Error("No request handler"));
 					}

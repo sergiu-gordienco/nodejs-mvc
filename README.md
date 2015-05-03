@@ -78,12 +78,11 @@ Fast and simple MCV in nodejs
 	 ***************************/
 
 	var io = require('socket.io')(server);
+	// io.set('transports', ["websocket", "polling"]);
 
 	/**
 	 * adding session to socket.io on authorization
 	 */
-
-	var io = require('socket.io')(server);
 
 	io.set('authorization', function(data, accept) {
 		// check if user has a session
