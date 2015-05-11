@@ -375,6 +375,38 @@ it is very optimized, and practically, doesn't store additional metadata.
 
 ### Response Methods
 
+ * `response.req`                        - request related tu current request
+ * `response.get(headerName)`            - return a header value
+ * `response.append(headerName, val)`    - add value to a header, if header is already set, append second same header
+ * `response.location(url)`              - add headers for redirect by url
+ * `response.clearCookie(name, options)  - removing a coockie
+ * `response.cookie(name, val, options)  - addinf a cookie
+     * `options.signed`             - if true, hash the cookie
+     * `options.expires`            - absolute expiration date for the cookie (Date object)
+     * `options.path`               - cookie path
+     * `options.maxAge`             - relative max age of the cookie from when the client receives it (seconds)
+     * `options.domain`             - domain for the cookie
+     * `options.secure`             - true or false
+     * `options.httpOnly`           - true or false
+ * `response.pipe(filePath, callback, request)`
+    _piping a file from_ `filePath` _to_ `response`
+    `response` _is not closed/ended_
+    `callback` _captures `err` in case of in-success_ `function (err) { /*...*/ }`
+    `request` _is optional ( used for `Content-Range` header)_
+ * `response.download(filePath, fileName, callback, request)`
+    _piping a file from_ `filePath` _to_ `response`
+    `fileName` _filename for downloaded file_
+    `response` _is not closed/ended_
+    `callback` _captures `err` in case of in-success_ `function (err) { /*...*/ }`
+    `request` _is optional ( used for `Content-Range` header)_
+ * `response.staticResource(filePath, fileName, callback, request)`
+    _piping a file from_ `filePath` _to_ `response`
+    `fileName` _filename for returned file_
+    `response` _is not closed/ended_
+    `callback` _captures `err` in case of in-success_ `function (err) { /*...*/ }`
+    `request` _is optional ( used for `Content-Range` header)_
+
+
 ## Templates FaceboxTPL
 
 ### To view parameters that are send have following structure

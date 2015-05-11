@@ -1,7 +1,7 @@
 {
   "name": "nodejs-mvc",
-  "version": "1.0.22",
-  "description": "MVC pattern application in nodejs",
+  "version": "1.0.23",
+  "description": "MVC Framework/Pattern application in nodejs. Supports Content-Range. Very Fast MVC and Very fast NodeJS Static Server.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,8 +17,14 @@
     "custom",
     "node mvc",
     "node-mvc",
+    "controller",
+    "node controller",
     "nodejs-mvc",
     "mvc",
+    "mvc pattern",
+    "mvc framework",
+    "mvc model",
+    "nodejs framework",
     "pattern",
     "view",
     "controller",

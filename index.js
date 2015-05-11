@@ -46,7 +46,7 @@ var responseCookie	= function (res, req) {
 		return this;
 	};
 
-	res.append = function append(field, val) {
+	res.append = function (field, val) {
 		var prev = this.get(field);
 		var value = val;
 
@@ -107,12 +107,46 @@ var responseCookie	= function (res, req) {
 		return this;
 	};
 
-	res.pipe = function (filePath, callback) {
-		var err;
-		try {
-			var stat = _classes.fs.statSync(filePath);
+	res.pipe = function (filePath, callback, req) {
+		_classes.fs.stat(filePath, function (err, stat) {
+			if (err) {
+				if (callback) {
+					callback(err);
+				}
+				return;
+			}
 
-			var readStream = _classes.fs.createReadStream(filePath);
+			var readStream, start, end, total = stat.size, chunksize;
+
+			if (req) {
+				var range = req.headers.range || "";
+				if (range && total) {
+					var parts = range.replace(/bytes=/, "").split("-");
+					var partialstart = parts[0];
+					var partialend = parts[1];
+
+					start = parseInt(partialstart, 10);
+					end = partialend ? parseInt(partialend, 10) : total-1;
+					chunksize = (end-start)+1;
+
+					res.statusCode	= 206;
+					res.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + total);
+					res.setHeader("Accept-Ranges", "bytes");
+					res.setHeader("Content-Length", chunksize);
+				}
+			}
+
+			if (typeof(start) === "number") {
+				if (typeof(end) === "number") {
+					readStream = _classes.fs.createReadStream(filePath, { start: start, end: end });
+				} else {
+					readStream = _classes.fs.createReadStream(filePath, { start: start });
+				}
+			} else {
+				readStream = _classes.fs.createReadStream(filePath);
+			}
+
+
 			readStream.on('data', function(data) {
 				var flushed = res.write(data);
 				// Pause the read stream when the write stream gets saturated
@@ -143,15 +177,10 @@ var responseCookie	= function (res, req) {
 					callback(undefined);
 				}
 			});
-
-		} catch (err) {
-			if (callback) {
-				callback(err);
-			}
-		}
+		});
 	};
 
-	res.download	= function (filePath, fileName, callback) {
+	res.download	= function (filePath, fileName, callback, req) {
 		var file	= (((function (path, file) {
 				if (typeof(file) === "string") {
 					return file;
@@ -159,17 +188,16 @@ var responseCookie	= function (res, req) {
 					return filePath.replace(/^[\s\S]*[\/\\]/, '');
 				}
 			})(filePath, fileName)) || "file");
-		res.writeHead(200, {
-			'Content-Type'	: _classes.extensions.mime(file),
-			'Content-Disposition'	: 'attachment; filename="'+file+'"'
-		});
+		res.statusCode	= 200;
+		res.setHeader('Content-Type', _classes.extensions.mime(file));
+		res.setHeader('Content-Disposition', 'attachment; filename="'+file+'"');
 		res.pipe(filePath, ( callback || function (err) {
 				if (err) {
 					appInstance._events.onError(err, { res: res, status : 404, end : true });
 				} else {
 					res.end();
 				}
-			})
+			}), req
 		);
 	};
 
@@ -196,7 +224,7 @@ var responseCookie	= function (res, req) {
 								} else {
 									res.end();
 								}
-							})
+							}), req
 						);
 					}
 				}
