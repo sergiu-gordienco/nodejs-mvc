@@ -38,7 +38,9 @@ var moduleObject	= {
 						throw err;
 					}
 				}
-				response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+				if (!response.headersSent) {
+					response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+				}
 				response.write(html);
 			});
 		} else if( view.path.match(/\.(jade)$/) ) {
@@ -52,10 +54,14 @@ var moduleObject	= {
 				env		: _classes.facebox.getEnvVars(),
 				vars	: options
 			});
-			response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+			if (!response.headersSent) {
+				response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+			}
 			response.write(html);
 		} else {
-			response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+			if (!response.headersSent) {
+				response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+			}
 			response.write(_classes.fs.readFileSync( view.path ));
 		}
 	}

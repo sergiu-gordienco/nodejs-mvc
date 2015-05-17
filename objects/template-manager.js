@@ -32,7 +32,9 @@ module.exports	= function( viewer ) {
 				_configObject.viewer.render( response, _templates[templateName], ( options || {} ) );
 				response.end();
 			} else {
-				response.writeHead('404','Content-type: text/plain; charset=utf-8');
+				if (!response.headersSent) {
+					response.writeHead('404','Content-type: text/plain; charset=utf-8');
+				}
 				response.end('Page not found');
 			}
 		}

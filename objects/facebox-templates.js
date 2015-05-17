@@ -163,7 +163,7 @@ var faceboxTemplate	= function() {
 				renderFile	: publicObject.renderFile
 			};
 			var html	= publicObject.render( code, options, env );
-			(callback)( env.error.length ? env.error : false, html );
+			(callback)( env.error.length ? env.error : undefined, html );
 		}
 	};
 	return publicObject;
