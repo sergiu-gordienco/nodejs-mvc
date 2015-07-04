@@ -590,6 +590,20 @@ On template Rendering we have following variables
 
 ## Global Functions
 
+### Extend/Merge Objects
+
+```javascript
+	objMerge	= function(obj1, obj2, obj3, ..) { /*...*/ }
+```
+
+> extend object
+> `objEncodeURL({ name: "foo", val : "23"}, { val: 24, val2: "abc"} )`
+> result `{ name: "foo", val: 24, val2: "abc" }`
+
+> remove poperty from object
+> `objEncodeURL({ name: "foo", val : "23"}, { val: null, val2: "abc"} )`
+> result `{ name: "foo", val2: "abc" }`
+
 ### Encode URL variables
 
 ```javascript

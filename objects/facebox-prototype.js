@@ -111,15 +111,33 @@ var faceboxUpdateProto	= function( root ) {
 	};
 
 
+	root.objMerge	= function() {
+		if(typeof(arguments[0]) == "object") {
+			var i,j,k;for(i=1;i<arguments.length;i++)
+				if(typeof(arguments[i]) == "object")
+				for(j in arguments[i])
+					if( arguments[i][j] === null ) {
+						if(j in arguments[0]) try {
+							delete arguments[0][j];
+						} catch(k) {};
+					} else {
+						arguments[0][j]	= arguments[i][j];
+					}
+			return arguments[0];
+		};
+		return arguments[0];
+	};
+
+
 	root.objEncodeURL	= function(o,k) {
 		var r = [],i;
 			if(!k) k = "";
 			if(isArray(o) && k) {
 				for( i=0; i<o.length; i++ )
-					r.push(objEncodeURL(o[i],""+k+"["+i+"]"));
+					r.push(root.objEncodeURL(o[i],""+k+"["+i+"]"));
 			} else if( typeof(o) == "object" ) {
 				for( i in o )
-					r.push(objEncodeURL(o[i], ""+k+( k ? "[" : "" )+i+( k ? "]" : "" ) ));
+					r.push(root.objEncodeURL(o[i], ""+k+( k ? "[" : "" )+i+( k ? "]" : "" ) ));
 			} else if( k ) {
 				return ""+k+"="+encodeURIComponent(o);
 			}
