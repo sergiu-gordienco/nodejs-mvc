@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Wellcome</title>
+</head>
+<body>
+<hr />
+	<h2>POST</h2>
+	<form action="/test/" method="post">
+		<input type="text" name="a" value="..." />
+		<input type="submit">
+	</form>
+<hr />
+	<h2>POST Multipart</h2>
+	<form action="/test/" method="post" enctype="multipart/form-data">
+		<input type="text" name="a" value="..." />
+		<input type="file" name="fa" />
+		<input type="file" name="fb" />
+		<input type="submit">
+	</form>
+<hr />
+	It works !
+	<br />
+	<code>
+		<b>PageViews:</b> {{ vars.pageviews }}
+		<br />
+		<b>SessionDyn Id:</b> {{ vars.sessionDynId }} <i>- Fast CrossSession Memory Object</i>
+		<br />
+		<b>Session Id:</b> {{ vars.sessionId }} <i>- Default NodeJs Session Object</i>
+	</code>
+	<br />
+	<img src="screenshot.png" style="max-width: 50%;" />
+</body>
+</html>
