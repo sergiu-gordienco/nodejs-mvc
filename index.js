@@ -35,10 +35,10 @@ var extendResponseRequest	= function (res, req) {
 		switch (name = name.toLowerCase()) {
 			case 'referer':
 			case 'referrer':
-				return this.headers.referrer
-					|| this.headers.referer;
+				return req.headers.referrer
+					|| req.headers.referer;
 			default:
-				return this.headers[name];
+				return req.headers[name];
 		}
 	};
 
@@ -169,6 +169,7 @@ var extendResponseRequest	= function (res, req) {
 		appInstance.console.error(err);
 	}
 
+	res.get = req.get;
 	res.set =
 	res.header = function header(field, val) {
 		if (arguments.length === 2) {
@@ -393,7 +394,27 @@ var _config	= {
 		"trace"	: [],
 		"delete"	: [],
 		"options"	: [],
-		"connect"	: []
+		"connect"	: [],
+
+		"checkout"		: [],
+		"copy"			: [],
+		"lock"			: [],
+		"merge"			: [],
+		"mkactivity"	: [],
+		"mkcol"			: [],
+		"move"			: [],
+		"m-search"		: [],
+		"notify"		: [],
+		"patch"			: [],
+		"post"			: [],
+		"propfind"		: [],
+		"proppatch"		: [],
+		"purge"			: [],
+		"report"		: [],
+		"search"		: [],
+		"subscribe"		: [],
+		"unlock"		: [],
+		"unsubscribe"	: []
 	},
 	debug	: true,
 	// dyn session
@@ -872,45 +893,6 @@ var appInstance			= {
 		}
 		return false;
 	},
-	use	: function (route, callback) {
-		if (typeof(route) === "function") {
-			callback	= route;
-			route		= false;
-		}
-		route	= _config.routeNormalize(route);
-		if (typeof(callback) === "function") {
-			_config.httpListners["use"].push({
-				route	: route,
-				callback	: callback
-			});
-		}
-	},
-	get	: function (route, callback) {
-		if (typeof(route) === "function") {
-			callback	= route;
-			route		= false;
-		}
-		route	= _config.routeNormalize(route);
-		if (typeof(callback) === "function") {
-			_config.httpListners["get"].push({
-				route	: route,
-				callback	: callback
-			});
-		}
-	},
-	post	: function (route, callback) {
-		if (typeof(route) === "function") {
-			callback	= route;
-			route		= false;
-		}
-		route	= _config.routeNormalize(route);
-		if (typeof(callback) === "function") {
-			_config.httpListners["post"].push({
-				route	: route,
-				callback	: callback
-			});
-		}
-	},
 	all		: function (route, callback) {
 		if (typeof(route) === "function") {
 			callback	= route;
@@ -930,7 +912,6 @@ var appInstance			= {
 		}
 	}
 };
-
 
 var controllerInstance	= require(_config.getLibPath()+'controller.js');
 var viewerInstance		= require(_config.getLibPath()+'viewer.js');
@@ -1091,10 +1072,30 @@ moduleObject.onMaxPostSize					= appInstance.onMaxPostSize;
 moduleObject.sessionManager					= new sessionInstance(true);
 moduleObject._events						= appInstance._events;
 
-moduleObject.use	= appInstance.use;
-moduleObject.get	= appInstance.get;
-moduleObject.post	= appInstance.post;
-moduleObject.all	= appInstance.all;
+
+;((function (httpListners, appInstance) {
+	moduleObject.all	= appInstance.all;
+	var method;
+	for (method in httpListners) {
+		;((function (m) {
+			appInstance[m]	= function (route, callback) {
+				if (typeof(route) === "function") {
+					callback	= route;
+					route		= false;
+				}
+				route	= _config.routeNormalize(route);
+				if (typeof(callback) === "function") {
+					_config.httpListners[m].push({
+						route	: route,
+						callback	: callback
+					});
+				}
+			};
+			moduleObject[m]	= appInstance[m];
+		})(method + '', appInstance));
+	}
+})(_config.httpListners, appInstance));
+
 
 appInstance._events.onError	= function( error, config ) {
 	appInstance.console.error( error );
