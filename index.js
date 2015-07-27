@@ -1,32 +1,106 @@
+var http_statuses   = require(__dirname + "/objects/http_statuses.js");
+
 
 var appBuilder	= function () {
 
-var _classes	= {
-	fs		: require('fs'),
-	url		: require('url'),
-	os		: require('os'),
-	merge	: function(a, b) {
-		if (a && b) {
-			for (var key in b) {
-				a[key] = b[key];
+	var _classes	= {
+		fs		: require('fs'),
+		http	: require('http'),
+		url		: require('url'),
+		os		: require('os'),
+		merge	: function(a, b) {
+			if (a && b) {
+				for (var key in b) {
+					a[key] = b[key];
+				}
 			}
-		}
-		return a;
-	},
-	cookie	: require('cookie'),
-	cookieParser	: require('cookie-parser'),
-	cookieSignature	: require('cookie-signature'),
-	expressSession	: require('express-session'),
-	extensions		: require(__dirname+"/objects/extensions.js")
-};
+			return a;
+		},
+		cookie	: require('cookie'),
+		cookieParser	: require('cookie-parser'),
+		cookieSignature	: require('cookie-signature'),
+		expressSession	: require('express-session'),
+		extensions		: require(__dirname+"/objects/extensions.js")
+	};
 
 
 var extendResponseRequest	= function (res, req) {
 	var request	= req;
 
-	res.app	= function () {
+	req.app = res.app	= function () {
 		return moduleObject;
 	};
+	request.originalUrl	= request.originalUrl || req.url;
+
+	request.urlObject	= ((request.url || "") + "").parseUrl(true);
+	var parts	= request.urlObject.pathname.split(/\//);
+	request.controller			= parts[1] || "index";
+	request.controllerAction	= parts[2] || "index";
+	request.params		= parts.slice(3).map(function(v) {
+		var e,r;
+		try {
+			r = decodeURIComponent(v);
+		} catch(e) {
+			r = unescape(v);
+		}
+		return r;
+	});
+	request.getVars	= function() {
+		return request.urlObject.get_vars;
+	};
+	request.postData	= new Buffer(0);
+	request.postVars	= function() {
+		if( !( "post_vars" in request.urlObject ) ) {
+			if( (request.headers['content-type'] || '').indexOf('multipart/form-data') === 0 && ( request.method == 'POST' || request.method == 'PUT' ) ) {
+				var hex		= request.postData.toString('hex', 0, request.postData.length);
+				var data	= hex.fromHex().parseMultipartFormData(true,false,true,hex);
+				request.urlObject.post_vars	= data._post;
+				// urlObj.post_vars.data	= request.postData.toString('hex', 0, request.postData.length);
+				request.urlObject.file_vars	= data._files;
+			} else {
+				request.urlObject.post_vars	= request.postData.toString('utf-8', 0, request.postData.length).parseUrlVars(true);
+				request.urlObject.file_vars	= {};
+			}
+		}
+		return request.urlObject.post_vars;
+	};
+	request.fileVars	= function() {
+		if( !( "file_vars" in request.urlObject ) ) {
+			request.postVars();
+		}
+		return request.urlObject.file_vars;
+	};
+
+	res.redirect = function redirect(url) {
+		var address = url;
+		var body;
+		var status = 302;
+
+		// allow status / url
+		if (arguments.length === 2) {
+			if (typeof arguments[0] === 'number') {
+				status = arguments[0];
+				address = arguments[1];
+			}
+		}
+
+		// Set location header
+		this.set('Location', address);
+		address = this.get('Location');
+
+		body = http_statuses[status] + '. Redirecting to ' + encodeURI(address);
+
+		// Respond
+		this.statusCode = status;
+		this.set('Content-Length', Buffer.byteLength(body));
+
+		if (this.req.method === 'HEAD') {
+			this.end();
+		} else {
+			this.end(body);
+		}
+	};
+
 
 	// TODO docs
 
@@ -42,32 +116,20 @@ var extendResponseRequest	= function (res, req) {
 		}
 	};
 
+	res.get = res.getHeader;
+	res.req = req;
 	var err;
 	try {
 		Object.defineProperty(request, 'body', {
-			get: function() { return this.postVars(); },
+			get: function() { return request.postVars(); },
 			set: function(v) {
 				appInstance.console.warn("[Request.body] is not configurable");
 			},
 			enumerable: true,
 			configurable: true
 		});
-		var urlObj = false;
-		Object.defineProperty(request, 'urlObject', {
-			get: function() {
-				if (urlObj === false) {
-					urlObj	= this.url.parseUrl(true);
-				}
-				return urlObj;
-			},
-			set: function(v) {
-				appInstance.console.warn("[Request.urlObject] is not configurable");
-			},
-			enumerable: true,
-			configurable: true
-		});
 		Object.defineProperty(request, 'query', {
-			get: function() { return this.getVars(); },
+			get: function() { return request.getVars(); },
 			set: function(v) {
 				appInstance.console.warn("[Request.query] is not configurable");
 			},
@@ -75,7 +137,7 @@ var extendResponseRequest	= function (res, req) {
 			configurable: true
 		});
 		Object.defineProperty(request, 'files', {
-			get: function() { return this.fileVars(); },
+			get: function() { return request.fileVars(); },
 			set: function(v) {
 				appInstance.console.warn("[Request.files] is not configurable");
 			},
@@ -92,7 +154,16 @@ var extendResponseRequest	= function (res, req) {
 		});
 		// TODO request.fresh
 		// TODO request.stale
-		// TODO request.baseUrl
+		
+		Object.defineProperty(request, 'baseUrl', {
+			get: function() { return moduleObject.mountpath; },
+			set: function(v) {
+				appInstance.console.warn("[Request.app] should be not configurable");
+				moduleObject.mountpath	= v;
+			},
+			enumerable: true,
+			configurable: true
+		});
 		// TODO request.originalUrl
 		// TODO request.ips
 		// TODO request.subdomains
@@ -145,7 +216,7 @@ var extendResponseRequest	= function (res, req) {
 		// 	configurable: true
 		// });
 		Object.defineProperty(request, 'protocol', {
-			get: function() { return this.urlObject.protocol; },
+			get: function() { return request.urlObject.protocol; },
 			set: function(v) {
 				appInstance.console.warn("[Request.protocol] is not configurable");
 			},
@@ -154,10 +225,10 @@ var extendResponseRequest	= function (res, req) {
 		});
 		Object.defineProperty(request, 'ip', {
 			get: function() {
-				return this.headers['x-forwarded-for'] || 
-				this.connection.remoteAddress || 
-				this.socket.remoteAddress ||
-				this.connection.socket.remoteAddress || undefined;
+				return request.headers['x-forwarded-for'] || 
+				request.connection.remoteAddress || 
+				request.socket.remoteAddress ||
+				request.connection.socket.remoteAddress || undefined;
 			},
 			set: function(v) {
 				appInstance.console.warn("[Request.hostname] is not configurable");
@@ -169,7 +240,6 @@ var extendResponseRequest	= function (res, req) {
 		appInstance.console.error(err);
 	}
 
-	res.get = req.get;
 	res.set =
 	res.header = function header(field, val) {
 		if (arguments.length === 2) {
@@ -181,13 +251,13 @@ var extendResponseRequest	= function (res, req) {
 				var charset = 'utf-8';
 				if (charset) val += '; charset=' + charset.toLowerCase();
 			}
-			this.setHeader(field, val);
+			res.setHeader(field, val);
 		} else {
 			for (var key in field) {
-				this.set(key, field[key]);
+				res.set(key, field[key]);
 			}
 		}
-		return this;
+		return res;
 	};
 
 	res.append = function (field, val) {
@@ -239,7 +309,7 @@ var extendResponseRequest	= function (res, req) {
 		var headerVal = _classes.cookie.serialize(name, String(val), options);
 
 		// supports multiple 'res.cookie' calls by getting previous value
-		var prev = this.get('Set-Cookie');
+		var prev = res.get('Set-Cookie');
 		if (prev) {
 			if (Array.isArray(prev)) {
 				headerVal = prev.concat(headerVal);
@@ -247,8 +317,8 @@ var extendResponseRequest	= function (res, req) {
 				headerVal = [prev, headerVal];
 			}
 		}
-		this.set('Set-Cookie', headerVal);
-		return this;
+		res.set('Set-Cookie', headerVal);
+		return res;
 	};
 
 	res.pipe = function (filePath, callback, req) {
@@ -324,7 +394,7 @@ var extendResponseRequest	= function (res, req) {
 		});
 	};
 
-	res.download	= function (filePath, fileName, callback, req) {
+	res.attachment = res.download	= function (filePath, fileName, callback, req) {
 		var file	= (((function (path, file) {
 				if (typeof(file) === "string") {
 					return file;
@@ -380,6 +450,54 @@ var extendResponseRequest	= function (res, req) {
 			} catch (err) {};
 		}
 	};
+	res.status	= function (code) {
+		res.statusCode	= code;
+	};
+	res.send	= function (data) {
+		if (typeof(data) === "string") {
+			if (data[0] === '<') {
+				if (!res.headersSent)
+					res.set('Content-Type', 'text/html');
+			} else {
+				if (!res.headersSent)
+					res.set('Content-Type', 'text/plain');
+			}
+			res.write(data);
+		} if (data instanceof Buffer) {
+			if (!res.headersSent)
+				res.set('Content-Type', 'application/octet-stream');
+			res.write(data);
+			res.end();
+		} else if (Array.isArray(data) || typeof(data) === "object") {
+			if (!res.headersSent)
+				res.set('Content-Type', 'application/json');
+			res.write(JSON.stringify(data));
+			res.end();
+		} else {
+			if (!res.headersSent)
+				res.set('Content-Type', 'application/octet-stream');
+			res.write((data.toString ? data.toString() : (data + '')));
+			res.end();
+		}
+	};
+	res.sendStatus	= function (code) {
+		res.status(code).send(http_statuses[code] || (code + ''));
+		return res;
+	};
+	res.sendFile	= function (path, options, callback) {
+		// TODO right res.sendFile()
+		res.staticResource(path, undefined, callback, undefined);
+		return res;
+	};
+	res.locals	= res.app.locals;
+	// TODO res.format()
+	// TODO res.json()
+	// TODO res.jsonp()
+	// TODO res.render()
+	// TODO res.type()
+	// TODO res.links()
+	// TODO res.location()
+	// TODO res.vary() 
 };
 
 
@@ -387,6 +505,7 @@ var extendResponseRequest	= function (res, req) {
 var _config	= {
 	httpListners	: {
 		"use"	: [],
+		"preuse"	: [],
 		"post"	: [],
 		"get"	: [],
 		"head"	: [],
@@ -418,6 +537,7 @@ var _config	= {
 	},
 	debug	: true,
 	// dyn session
+	'strict routing': true,
 	sessionExpire	: 600,
 	maxPostSize		: 4 * 1024 * 1024,
 	sessionCookieName	: 'ssid',
@@ -464,7 +584,7 @@ var _config	= {
 				if (stat.isDirectory()) {
 					response.staticResource((path || _config.publicPath) + url + "/index.html", undefined, undefined, request);
 				} else {
-					response.setHeader('Content-Type', 'text/html');
+					response.setHeader('onRequestCaptureContent-Type', 'text/html');
 					response.staticResource((path || _config.publicPath) + url, undefined, undefined, request);
 				}
 			}
@@ -522,8 +642,6 @@ var _config	= {
 				request.secret	= (request.protocol === 'https');
 				request.cookieSecret	= root.cookieSecret || root.sessionSecret;
 			}
-			if (request && response)
-				response.req	= request;
 			extendResponseRequest(response, request);
 			root.sessionHandler(request, response, function (err) {
 				if (err) {
@@ -540,15 +658,17 @@ var _config	= {
 						}
 					}
 				} else {
-					if (typeof(next) === "function") {
+					if (!request.sessionDyn) {
 						request.sessionDyn	= new sessionInstance( request, response, appInstance, {
-								expire			: root.sessionExpire,
-								cookieName		: root.sessionCookieName,
-								cookieDomain	: root.sessionCookieDomain
-							} );
+							expire			: root.sessionExpire,
+							cookieName		: root.sessionCookieName,
+							cookieDomain	: root.sessionCookieDomain
+						} );
 						if( root.sessionExpire && root.sessionAutoUpdate ) {
 							request.sessionDyn.setExpire( root.sessionExpire );
 						}
+					}
+					if (typeof(next) === "function") {
 						return next();
 					} else {
 						appInstance.console.error(new Error("No request handler"));
@@ -571,7 +691,8 @@ var _config	= {
 		var next	= function () {
 			if (i < _config.httpListners[type].length) {
 				i++;
-				if (_config.routeMatch(_config.httpListners[type][i-1].route, url)) {
+				if (_config.routeMatch(_config.httpListners[type][i-1].route, url, false, _config.httpListners[type][i-1].mount)) {
+					console.log( "\033[1;34m mount: ", moduleObject.mountpath ,"; route: ", _config.httpListners[type][i-1].route, "; url: ", url, "\033[0m");
 					if (onMatch) {
 						onMatch(function () {
 							_config.httpListners[type][i-1].callback(req, res, next);
@@ -580,6 +701,7 @@ var _config	= {
 						_config.httpListners[type][i-1].callback(req, res, next);
 					}
 				} else {
+					console.log( "\033[1;35m mount: ", moduleObject.mountpath ,"; route: ", _config.httpListners[type][i-1].route, "; url: ", url, "\033[0m");
 					next();
 				}
 			} else {
@@ -589,57 +711,18 @@ var _config	= {
 		next();
 	},
 	handleServerResponse		: function (request, response, next) {
-		_config.runHttpListners("use", request, response, function () {
-			var root	= _config;
+		var root	= _config;
+		root.runHttpListners("preuse", request, response, function () {
 			root.handleServerMidleware(request, response, function () {
-				_config.handleServerResponseLogic(request, response, next);
+				root.runHttpListners("use", request, response, function () {
+					root.handleServerResponseLogic(request, response, next || root.handleStaticResponse);
+				});
 			});
 		});
 	},
 	handleServerResponseLogic	: function( request, response, next ) {
 		var root	= this;
 		var url		= request.url;
-		var parts	= request.urlObject.pathname.split(/\//);
-		request.controller			= parts[1] || "index";
-		request.controllerAction		= parts[2] || "index";
-		request.params		= parts.slice(3).map(function(v) {
-			var e,r;
-			try {
-				r = decodeURIComponent(v);
-			} catch(e) {
-				r = unescape(v);
-			}
-			return r;
-		});
-		request.getVars	= function() {
-			return request.urlObject.get_vars;
-		};
-		request.postData	= new Buffer(0);
-		request.postVars	= function() {
-			if( !( "post_vars" in request.urlObject ) ) {
-				if( (request.headers['content-type'] || '').indexOf('multipart/form-data') === 0 && ( request.method == 'POST' || request.method == 'PUT' ) ) {
-					var hex		= request.postData.toString('hex', 0, request.postData.length);
-					var data	= hex.fromHex().parseMultipartFormData(true,false,true,hex);
-					request.urlObject.post_vars	= data._post;
-					// urlObj.post_vars.data	= request.postData.toString('hex', 0, request.postData.length);
-					request.urlObject.file_vars	= data._files;
-				} else {
-					request.urlObject.post_vars	= request.postData.toString('utf-8', 0, request.postData.length).parseUrlVars(true);
-					request.urlObject.file_vars	= {};
-				}
-			}
-			return request.urlObject.post_vars;
-		};
-		request.fileVars	= function() {
-			if( !( "file_vars" in request.urlObject ) ) {
-				request.postVars();
-			}
-			return request.urlObject.file_vars;
-		};
-
-		response.redirect	= function(url, status) {
-			return root.redirect( response, url, ( status || 302 ) );
-		};
 
 		var postDataCallbacks	= [];
 		var postDataStatus	= 'pending';
@@ -680,6 +763,12 @@ var _config	= {
 			});
 			request.on("error", function(err) {
 				postDataStatus	= 'error';
+				if ("file_vars" in request.urlObject) {
+					delete request.urlObject.file_vars;
+				}
+				if ("post_vars" in request.urlObject) {
+					delete request.urlObject.post_vars;
+				}
 				postDataCallbacks.forEach(function (cb) {
 					cb();
 				});
@@ -693,6 +782,12 @@ var _config	= {
 			});
 			request.on("end", function() {
 				postDataStatus	= 'done';
+				if ("file_vars" in request.urlObject) {
+					delete request.urlObject.file_vars;
+				}
+				if ("post_vars" in request.urlObject) {
+					delete request.urlObject.post_vars;
+				}
 				postDataCallbacks.forEach(function (cb) {
 					cb();
 				});
@@ -792,25 +887,41 @@ var _config	= {
 		};
 		return route;
 	},
-	routeMatch	: function (route, url) {
+	routeMatch	: function (route, url, noMountCheck, mount) {
+		if (!noMountCheck) {
+			if (moduleObject.mountpath !== "/") {
+				if (moduleObject.mountpath instanceof RegExp) {
+					var m	= url.match(moduleObject.mountpath);
+					url	= '/'+url.substring((m[0] || "").length).replace(/^\/+/);
+				} else if (typeof(moduleObject.mountpath) === "string") {
+					url	= '/'+url.substring(moduleObject.mountpath.length).replace(/^\/+/);
+				}
+			}
+		}
+
 		if (route === false) {
 			return true;
 		} else {
 			url	= (url || '');
-			var i, c;
+			var i, c, rt;
 			for (i=0;i<route.length;i++) {
-				if (typeof(route[i]) === "string") {
-					c	= url[route[i].length];
+				rt	= route[i];
+				if (!_config['strict routing'] && typeof(rt) === "string") {
+					rt	= rt.replace(/\/+$/, '');
+				}
+				if (typeof(rt) === "string") {
+					c	= url[rt.length];
 					// appInstance.console.info("LAST Char", url.substring(0, route[i].length), " === ", route[i], ':', c, ':', route[i][route[i].length - 1]);
 					if (
-						( url.substring(0, route[i].length).replace(/\?$/, '/') === route[i] ) &&
-						( c === undefined || c === "?" || c === "/" || route[i][route[i].length - 1] === "/" )
+						( mount || ! url.substring(rt.length).match(/^((\/|)[^\?\/]+)/)) && // check same path
+						( url.substring(0, rt.length).replace(/\?$/, '/') === rt ) &&
+						( c === undefined || c === "?" || c === "/" || rt[rt.length - 1] === "/" )
 					) {
 						return true;
 						break;
 					}
 				} else {
-					if (url.match(route)) {
+					if (url.match(rt)) {
 						return true;
 						break;
 					}
@@ -821,10 +932,7 @@ var _config	= {
 	},
 	redirect	: function( response, url, status ) {
 		if(!status)	status	= 302;
-		response.writeHead( status, {
-			'Location': url
-		});
-		response.end();
+		response.redirect( url, status);
 	}
 };
 var _appInstanceVars	= {};
@@ -902,7 +1010,7 @@ var appInstance			= {
 		if (typeof(callback) === "function") {
 			var i;
 			for( i in _config.httpListners ) {
-				if (i !== "use") {
+				if (i !== "use" && i !== "preuse") {
 					_config.httpListners[i].push({
 						route	: route,
 						callback	: callback
@@ -1033,6 +1141,22 @@ var moduleObject	= {
 		} else {
 			return viewerInstance.getEnvVars();
 		}
+	},
+	set	: function (p, value) {
+		var params	= {
+			'strict routing'	: function (v) {
+				if (typeof(v) !== "boolean") {
+					appInstance.console.warn("Setting param: '"+p+"' value should be typeof \"boolean\"");
+				}
+				_config[p]	= !!v;
+			}
+		};
+		if (p in params) {
+			params[p](value);
+		} else {
+			appInstance.console.warn("Unknown setting '"+p+"'");
+		}
+		return this;
 	}
 };
 
@@ -1073,23 +1197,71 @@ moduleObject.sessionManager					= new sessionInstance(true);
 moduleObject._events						= appInstance._events;
 
 
+moduleObject.locals						= appInstance.getVars;
+// TODO express app.mountpath
+moduleObject.route						= "/";
+moduleObject.mountpath					= "/";
+// TODO moduleObject.on('mount')
+// TODO moduleObject.disable()
+// TODO moduleObject.disabled()
+// TODO moduleObject.enable()
+// TODO moduleObject.enabled()
+// TODO moduleObject.engine()
+// TODO moduleObject.get('title')
+// TODO moduleObject.set('title','title page')
+// TODO moduleObject.param()
+// TODO moduleObject.path()
+// TODO moduleObject.render()
+
+moduleObject.handle	= moduleObject.handleServerResponse;
+
+moduleObject.listen = function(){
+	var server = http.createServer(moduleObject);
+	return server.listen.apply(server, arguments);
+};
+
 ;((function (httpListners, appInstance) {
 	moduleObject.all	= appInstance.all;
 	var method;
 	for (method in httpListners) {
 		;((function (m) {
-			appInstance[m]	= function (route, callback) {
-				if (typeof(route) === "function") {
-					callback	= route;
+			appInstance[m]	= function (route) {
+				var i, start	= 1;
+				if (
+					( (m === "use" || m === "preuse") && typeof(route) !== "string" && !(route instanceof RegExp) && route !== false && route !== undefined && route !== null )
+					||
+					( typeof(route) === "function" )
+				) {
+					start		= 0;
 					route		= false;
 				}
 				route	= _config.routeNormalize(route);
-				if (typeof(callback) === "function") {
-					_config.httpListners[m].push({
-						route	: route,
-						callback	: callback
-					});
+				for (i=start;i<arguments.length;i++) {
+					;((function (route, type, callback) {
+						if (type === "use" && typeof(callback.handle) === "function") {
+							callback.route	= (route || "/");
+							callback.mountpath	= (route[0] || "/");
+							_config.httpListners[type].push({
+								route	: route,
+								mount	: true,
+								callback	: function(req, res, next){
+									callback.handle(req, res, next);
+								}
+							});
+						} else if (type === "use" && (callback instanceof _classes.http.Server)) {
+							_config.httpListners[type].push({
+								route	: route,
+								callback	: callback.listeners('request')[0]
+							});
+						} else if (typeof(callback) === "function") {
+							_config.httpListners[type].push({
+								route	: route,
+								callback	: callback
+							});
+						}
+					})(route, m, arguments[i]));
 				}
+				return moduleObject;
 			};
 			moduleObject[m]	= appInstance[m];
 		})(method + '', appInstance));
@@ -1116,7 +1288,15 @@ appInstance._events.onError	= function( error, config ) {
 	return moduleObject;
 };
 
-var moduleBuilder	= appBuilder();
-moduleBuilder.app	= appBuilder;
-
+var moduleBuilder	= appBuilder;
+	moduleBuilder.app	= appBuilder;
+	// TODO moduleBuilder.static
+	// TODO moduleBuilder.Router
+var moduleDefault	= appBuilder();
+;((function () {
+	var i;
+	for (i in moduleDefault) {
+		moduleBuilder[i]	= moduleDefault[i];
+	}
+})());
 module.exports	= moduleBuilder;
