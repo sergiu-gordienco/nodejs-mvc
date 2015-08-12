@@ -1,6 +1,6 @@
 {
   "name": "nodejs-mvc",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "MVC Framework/Pattern application in nodejs. Supports Content-Range. Very Fast MVC and Very fast NodeJS Static Server.",
   "main": "index.js",
   "scripts": {

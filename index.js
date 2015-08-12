@@ -31,7 +31,13 @@ var extendResponseRequest	= function (res, req) {
 		return moduleObject;
 	};
 	request.originalUrl	= request.originalUrl || req.url;
-	request.isHttps		= ( request.connection.verifyPeer ? true : false );
+	
+	Object.defineProperty(request, 'isHttps', {
+		get: function() { return ( request.connection ? ( request.connection.verifyPeer ? true : false ) : false ); },
+		set: function(v) {},
+		enumerable	: true,
+		configurable: true
+	});
 
 	var u			= ( request.isHttps ? 'https' : 'http' ) + '://' + (request.headers.host || req.host || 'localhost') + ((request.url || "") + "");
 
