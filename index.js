@@ -31,8 +31,20 @@ var extendResponseRequest	= function (res, req) {
 		return moduleObject;
 	};
 	request.originalUrl	= request.originalUrl || req.url;
+	request.isHttps		= ( request.connection.verifyPeer ? true : false );
 
-	request.urlObject	= ((request.url || "") + "").parseUrl(true);
+	var u			= ( request.isHttps ? 'https' : 'http' ) + '://' + (request.headers.host || req.host || 'localhost') + ((request.url || "") + "");
+
+	request.urlObject	= (u).parseUrl(true);
+	Object.defineProperty(request, 'body', {
+		get: function() { return request.postVars(); },
+		set: function(v) {
+			appInstance.console.warn("[Request.body] is not configurable");
+		},
+		enumerable: true,
+		configurable: true
+	});
+
 	var parts	= request.urlObject.pathname.split(/\//);
 	request.controller			= parts[1] || "index";
 	request.controllerAction	= parts[2] || "index";
@@ -156,6 +168,7 @@ var extendResponseRequest	= function (res, req) {
 		// TODO request.stale
 		
 		Object.defineProperty(request, 'baseUrl', {
+			// TODO
 			get: function() { return moduleObject.mountpath; },
 			set: function(v) {
 				appInstance.console.warn("[Request.app] should be not configurable");
@@ -184,7 +197,7 @@ var extendResponseRequest	= function (res, req) {
 			configurable: true
 		});
 		Object.defineProperty(request, 'hostname', {
-			get: function() { return this.headers.host ? (this.headers.host + '').replace(/:\d+$/,'') : undefined; },
+			get: function() { return request.headers.host ? (request.headers.host + '').replace(/:\d+$/,'') : undefined },
 			set: function(v) {
 				appInstance.console.warn("[Request.hostname] is not configurable");
 			},
@@ -192,7 +205,7 @@ var extendResponseRequest	= function (res, req) {
 			configurable: true
 		});
 		Object.defineProperty(request, 'path', {
-			get: function() { return this.urlObject.pathname; },
+			get: function() { return request.urlObject.pathname; },
 			set: function(v) {
 				appInstance.console.warn("[Request.path] is not configurable");
 			},
@@ -589,30 +602,6 @@ var _config	= {
 				}
 			}
 		});
-		// _classes.fs.readFile( _config.publicPath + url, function (err,data) {
-		// 	if (err) {
-		// 		appInstance._events.onError(err, { res: response, status : 404, end : true });
-		// 	return;
-		// 	} else {
-		// 		_classes.fs.stat(_config.publicPath + url, function (err, stat) {
-		// 			if (err) {
-		// 				appInstance._events.onError(err, { res: response, status : 500, end : true });
-		// 			} else {
-		// 				var etag = stat.size + '-' + Date.parse(stat.mtime);
-		// 				response.setHeader('Last-Modified', stat.mtime);
-		// 				if (request.headers['if-none-match'] === etag) {
-		// 					response.statusCode = 304;
-		// 					response.end();
-		// 				} else {
-		// 					response.setHeader('Content-Length', data.length);
-		// 					response.setHeader('ETag', etag);
-		// 					response.statusCode = 200;
-		// 					response.end(data);
-		// 				}
-		// 			}
-		// 		});
-		// 	}
-		// });
 	},
 	handleServerMidleware	: function (request, response, next) {
 		var root	= _config;
@@ -638,8 +627,8 @@ var _config	= {
 			};
 			// console.log("response object", response, err);
 			// console.log("Cookies", arguments);
-			if (request) {
-				request.secret	= (request.protocol === 'https');
+			if (request) { // TODO
+				request.secret	= request.isHttps;
 				request.cookieSecret	= root.cookieSecret || root.sessionSecret;
 			}
 			extendResponseRequest(response, request);
@@ -692,7 +681,7 @@ var _config	= {
 			if (i < _config.httpListners[type].length) {
 				i++;
 				if (_config.routeMatch(_config.httpListners[type][i-1].route, url, false, _config.httpListners[type][i-1].mount)) {
-					console.log( "\033[1;34m mount: ", moduleObject.mountpath ,"; route: ", _config.httpListners[type][i-1].route, "; url: ", url, "\033[0m");
+					// console.log( "\033[1;34m oke-match mount: ", moduleObject.mountpath ,"; route: ", _config.httpListners[type][i-1].route, "; url: ", url, "\033[0m");
 					if (onMatch) {
 						onMatch(function () {
 							_config.httpListners[type][i-1].callback(req, res, next);
@@ -701,7 +690,7 @@ var _config	= {
 						_config.httpListners[type][i-1].callback(req, res, next);
 					}
 				} else {
-					console.log( "\033[1;35m mount: ", moduleObject.mountpath ,"; route: ", _config.httpListners[type][i-1].route, "; url: ", url, "\033[0m");
+					// console.log( "\033[1;35m not-match mount: ", moduleObject.mountpath ,"; route: ", _config.httpListners[type][i-1].route, "; url: ", url, "\033[0m");
 					next();
 				}
 			} else {
@@ -714,9 +703,9 @@ var _config	= {
 		var root	= _config;
 		root.runHttpListners("preuse", request, response, function () {
 			root.handleServerMidleware(request, response, function () {
-				root.runHttpListners("use", request, response, function () {
-					root.handleServerResponseLogic(request, response, next || root.handleStaticResponse);
-				});
+				root.runHttpListners("use", request, response,
+					next || function () { return root.handleServerResponseLogic(request, response) }
+				);
 			});
 		});
 	},
@@ -1225,16 +1214,17 @@ moduleObject.listen = function(){
 	var method;
 	for (method in httpListners) {
 		;((function (m) {
-			appInstance[m]	= function (route) {
-				var i, start	= 1;
+			appInstance[m]	= function () {
+				var i, start	= 1, route	= arguments[0];
 				if (
-					( (m === "use" || m === "preuse") && typeof(route) !== "string" && !(route instanceof RegExp) && route !== false && route !== undefined && route !== null )
+					( (m === "use" || m === "preuse") && ( typeof(route) !== "string" && !(route instanceof RegExp) && route !== false && route !== undefined && route !== null) )
 					||
 					( typeof(route) === "function" )
 				) {
 					start		= 0;
 					route		= false;
 				}
+				// console.log("Set Action [", m, "] ; route: ", route, " ; arguments: ", arguments)
 				route	= _config.routeNormalize(route);
 				for (i=start;i<arguments.length;i++) {
 					;((function (route, type, callback) {
