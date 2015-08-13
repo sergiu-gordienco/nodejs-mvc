@@ -33,7 +33,7 @@ var extendResponseRequest	= function (res, req) {
 	request.originalUrl	= request.originalUrl || req.url;
 	
 	Object.defineProperty(request, 'isHttps', {
-		get: function() { return ( request.connection ? ( request.connection.verifyPeer ? true : false ) : false ); },
+		get: function() { return ( request.connection ? ( request.connection.encrypted ? true : false ) : false ); },
 		set: function(v) {},
 		enumerable	: true,
 		configurable: true
@@ -341,6 +341,8 @@ var extendResponseRequest	= function (res, req) {
 	};
 
 	res.pipe = function (filePath, callback, req) {
+		if (!req)
+			req	= request;
 		_classes.fs.stat(filePath, function (err, stat) {
 			if (err) {
 				if (callback) {
