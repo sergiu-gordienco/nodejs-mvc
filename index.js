@@ -707,12 +707,17 @@ var _config	= {
 		};
 		next();
 	},
-	handleServerResponse		: function (request, response, next) {
+	handleServerResponse		: function (request, response, next, isMount) {
 		var root	= _config;
 		root.runHttpListners("preuse", request, response, function () {
 			root.handleServerMidleware(request, response, function () {
+				// console.log("CHECK STATE handleServerResponse", next);
 				root.runHttpListners("use", request, response,
-					next || function () { return root.handleServerResponseLogic(request, response) }
+					isMount
+					? function () { return root.handleServerResponseLogic(request, response, next) }
+					: (
+						next || function () { return root.handleServerResponseLogic(request, response) }
+					)
 				);
 			});
 		});
@@ -819,9 +824,13 @@ var _config	= {
 								response.end();
 						}, action.maxPostSize());
 					}
+				} else if (next) {
+					next();
 				} else {
 					root.handleStaticResponse( request, response );
 				}
+			} else if (next) {
+				next();
 			} else {
 				root.handleStaticResponse( request, response );
 			}
@@ -886,6 +895,7 @@ var _config	= {
 	},
 	routeMatch	: function (route, url, noMountCheck, mount) {
 		if (!noMountCheck) {
+			// console.info("routeMatch moduleObject.mountpath = ", moduleObject.mountpath, noMountCheck, route, url);
 			if (moduleObject.mountpath !== "/") {
 				if (moduleObject.mountpath instanceof RegExp) {
 					var m	= url.match(moduleObject.mountpath);
@@ -1243,7 +1253,8 @@ moduleObject.listen = function(){
 								route	: route,
 								mount	: true,
 								callback	: function(req, res, next){
-									callback.handle(req, res, next);
+									// console.log("INFO \"use\" callback.handle detected", callback.route, callback.mountpath);
+									callback.handle(req, res, next, true);
 								}
 							});
 						} else if (type === "use" && (callback instanceof _classes.http.Server)) {
