@@ -32,6 +32,8 @@ module.exports	= function( app, appPath ) {
 					}
 				});
 			}
+		} else {
+			console.log("WARN: Not a folder - " + appPath+folder );
 		}
 	});
 };

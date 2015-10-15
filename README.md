@@ -63,6 +63,13 @@ Fast and simple MCV in nodejs
 	app.runBootstrap();
 
 	server.listen(8080);
+
+	// method to call handleStaticResponse 
+	// in callback you get only one parameter ( err ) in case of file was not found
+	//	app.handleStaticResponse(request, response, path, callback);
+	//	app.handleStaticResponse(request, response, path);
+	//	app.handleStaticResponse(request, response, callback);
+
 ```
 
 ### [Section 2] Attaching a "socket.io" to server and assign SESSION and COOKIES

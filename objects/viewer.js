@@ -7,64 +7,68 @@
 var _classes	= {
 	fs		: require('fs'),
 	jade	: require("jade"),
-	facebox	: require(__dirname+'/facebox-templates.js')
+	facebox	: require(__dirname+'/facebox-templates.js')()
 };
 
-var _configObject	= {
-	envVars	: {}
-};
+var buildViewer	= function () {
 
-var moduleObject	= {
-	getEnvVars	: function() {
-		return _configObject.envVars;
-	},
-	updateEnvVars	: function( data ) {
-		var i;
-		for( i in data )
-			_configObject.envVars[i]	= data[i];
-	},
-	render	: function( response, view, options ) {
-		// { name, path, code }
-		if( view.path.match(/\.(tpl|fbx-tpl)$/) ) {
-			_classes.facebox.updateEnvVars(_configObject.envVars);
-			// _classes.facebox.updateEnvVars({ response: response });
-			_classes.facebox.renderFile( view.path, options, function( err, html ) {
-				if (err) {
-					if(isArray(err)) {
-						err.forEach(function(v) {
-							throw v;
-						})
-					} else {
-						throw err;
+	var _configObject	= {
+		envVars	: {}
+	};
+
+	var moduleObject	= {
+		getEnvVars	: function() {
+			return _configObject.envVars;
+		},
+		updateEnvVars	: function( data ) {
+			var i;
+			for( i in data )
+				_configObject.envVars[i]	= data[i];
+		},
+		render	: function( response, view, options ) {
+			// { name, path, code }
+			if( view.path.match(/\.(tpl|fbx-tpl)$/) ) {
+				_classes.facebox.updateEnvVars(_configObject.envVars);
+				// _classes.facebox.updateEnvVars({ response: response });
+				_classes.facebox.renderFile( view.path, options, function( err, html ) {
+					if (err) {
+						if(isArray(err)) {
+							err.forEach(function(v) {
+								throw v;
+							})
+						} else {
+							throw err;
+						}
 					}
-				}
+					if (!response.headersSent) {
+						response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+					}
+					response.write(html);
+				});
+			} else if( view.path.match(/\.(jade)$/) ) {
+				_classes.facebox.updateEnvVars(_configObject.envVars);
+				// _classes.facebox.updateEnvVars({ response: response });
+				// console.log({
+				// 	env		: _classes.facebox.getEnvVars(),
+				// 	vars	: options
+				// });
+				var html	= _classes.jade.renderFile(view.path, {
+					env		: _classes.facebox.getEnvVars(),
+					vars	: options
+				});
 				if (!response.headersSent) {
 					response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
 				}
 				response.write(html);
-			});
-		} else if( view.path.match(/\.(jade)$/) ) {
-			_classes.facebox.updateEnvVars(_configObject.envVars);
-			// _classes.facebox.updateEnvVars({ response: response });
-			// console.log({
-			// 	env		: _classes.facebox.getEnvVars(),
-			// 	vars	: options
-			// });
-			var html	= _classes.jade.renderFile(view.path, {
-				env		: _classes.facebox.getEnvVars(),
-				vars	: options
-			});
-			if (!response.headersSent) {
-				response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+			} else {
+				if (!response.headersSent) {
+					response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+				}
+				response.write(_classes.fs.readFileSync( view.path ));
 			}
-			response.write(html);
-		} else {
-			if (!response.headersSent) {
-				response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
-			}
-			response.write(_classes.fs.readFileSync( view.path ));
 		}
-	}
+	};
+	return moduleObject;
 };
 
-module.exports	= moduleObject;
+module.exports	= buildViewer;

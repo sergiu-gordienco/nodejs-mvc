@@ -168,4 +168,6 @@ var faceboxTemplate	= function() {
 	};
 	return publicObject;
 };
-module.exports	= new faceboxTemplate();
+module.exports	= function () {
+	return new faceboxTemplate();
+};

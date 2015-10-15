@@ -46,7 +46,7 @@ module.exports	= function( controllerName, options, appInstance ) {
 				};
 				return _views[viewName];
 			}
-			console.log( _views );
+			// console.log( _views );
 		},
 		render	: function( response, viewName, options ) {
 			if( _viewer && appInstance._functions.isValidIdentifier( viewName ) && controllerObject.viewExists( viewName ) ) {

@@ -42,27 +42,41 @@ var extendResponseRequest	= function (res, req) {
 	var u			= ( request.isHttps ? 'https' : 'http' ) + '://' + (request.headers.host || req.host || 'localhost') + ((request.url || "") + "");
 
 	request.urlObject	= (u).parseUrl(true);
-	Object.defineProperty(request, 'body', {
-		get: function() { return request.postVars(); },
+
+	Object.defineProperty(request, 'controller', {
+		get: function() { return ((request.app().getMountUpdateUrl(request.urlObject.pathname) || "").split("/")[1] || "index"); },
 		set: function(v) {
-			appInstance.console.warn("[Request.body] is not configurable");
+			appInstance.console.warn("[Request.controller] is not configurable");
+		},
+		enumerable: true,
+		configurable: true
+	});
+	Object.defineProperty(request, 'controllerAction', {
+		get: function() { return ((request.app().getMountUpdateUrl(request.urlObject.pathname) || "").split("/")[2] || "index"); },
+		set: function(v) {
+			appInstance.console.warn("[Request.controllerAction] is not configurable");
+		},
+		enumerable: true,
+		configurable: true
+	});
+	Object.defineProperty(request, 'params', {
+		get: function() { return (request.app().getMountUpdateUrl(request.urlObject.pathname) || "").split("/").slice(3).map(function(v) {
+				var e,r;
+				try {
+					r = decodeURIComponent(v);
+				} catch(e) {
+					r = unescape(v);
+				}
+				return r;
+			});
+		},
+		set: function(v) {
+			appInstance.console.warn("[Request.params] is not configurable");
 		},
 		enumerable: true,
 		configurable: true
 	});
 
-	var parts	= request.urlObject.pathname.split(/\//);
-	request.controller			= parts[1] || "index";
-	request.controllerAction	= parts[2] || "index";
-	request.params		= parts.slice(3).map(function(v) {
-		var e,r;
-		try {
-			r = decodeURIComponent(v);
-		} catch(e) {
-			r = unescape(v);
-		}
-		return r;
-	});
 	request.getVars	= function() {
 		return request.urlObject.get_vars;
 	};
@@ -119,7 +133,6 @@ var extendResponseRequest	= function (res, req) {
 		}
 	};
 
-
 	// TODO docs
 
 	req.get =
@@ -162,23 +175,23 @@ var extendResponseRequest	= function (res, req) {
 			enumerable: true,
 			configurable: true
 		});
-		Object.defineProperty(request, 'app', {
-			get: function() { return moduleObject; },
-			set: function(v) {
-				appInstance.console.warn("[Request.app] is not configurable");
-			},
-			enumerable: true,
-			configurable: true
-		});
+		// Object.defineProperty(request, 'app', {
+		// 	get: function() { return moduleObject; },
+		// 	set: function(v) {
+		// 		appInstance.console.warn("[Request.app] is not configurable");
+		// 	},
+		// 	enumerable: true,
+		// 	configurable: true
+		// });
 		// TODO request.fresh
 		// TODO request.stale
 		
 		Object.defineProperty(request, 'baseUrl', {
 			// TODO
-			get: function() { return moduleObject.mountpath; },
+			get: function() { return request.app().mountpath; },
 			set: function(v) {
 				appInstance.console.warn("[Request.app] should be not configurable");
-				moduleObject.mountpath	= v;
+				request.app().mountpath	= v;
 			},
 			enumerable: true,
 			configurable: true
@@ -596,17 +609,27 @@ var _config	= {
 		response.end('Max Post File Size');
 		return false;	// if false action processing is broken
 	},
-	handleStaticResponse	: function( request, response, path ) {
+	handleStaticResponse	: function( request, response, path, callback ) {
+		if (typeof(path) === "function") {
+			callback	= path;
+			path		= undefined;
+		}
 		var url	= request.url.replace(/[\x23\?][\s\S]*$/, '');
-		_classes.fs.stat((path || _config.publicPath) + url, function (err, stat) {
+		var app = request.app ? request.app() : moduleObject;
+		var fpath = (path || app.getPublicPath()) + ( path ? url : app.getMountUpdateUrl(url) );
+		_classes.fs.stat(fpath, function (err, stat) {
 			if (err) {
-				appInstance._events.onError(err, { res: response, status : 404, end : true });
+				if (callback) {
+					callback(err);
+				} else {
+					appInstance._events.onError(err, { res: response, status : 404, end : true });
+				}
 			} else {
 				if (stat.isDirectory()) {
-					response.staticResource((path || _config.publicPath) + url + "/index.html", undefined, undefined, request);
+					response.staticResource(fpath + "/index.html", undefined, callback, request);
 				} else {
 					response.setHeader('onRequestCaptureContent-Type', 'text/html');
-					response.staticResource((path || _config.publicPath) + url, undefined, undefined, request);
+					response.staticResource(fpath, undefined, callback, request);
 				}
 			}
 		});
@@ -724,7 +747,7 @@ var _config	= {
 	},
 	handleServerResponseLogic	: function( request, response, next ) {
 		var root	= this;
-		var url		= request.url;
+		var url		= request.app().getMountUpdateUrl(request.url);
 
 		var postDataCallbacks	= [];
 		var postDataStatus	= 'pending';
@@ -796,6 +819,7 @@ var _config	= {
 			});
 		};
 
+
 		var mvcRun	= function () {
 			var state = root.onRequestCapture( request, response, appInstance );
 			if( state == 'close' ) {
@@ -805,8 +829,9 @@ var _config	= {
 			var controller	= false;
 			if( state != 'force-static' ) {
 				// find controller and run action
-				controller	= moduleObject.getController(request.controller);
+				controller	= request.app().getController(request.controller);
 			}
+			appInstance.console.warn(request.method , request.app().getModulePath(), controller, request.controllerAction, request.url);
 			if( controller !== false ) {
 				var action	= controller.getAction( request.controllerAction );
 				if( action !== false && action.isPublic() ) {
@@ -824,15 +849,19 @@ var _config	= {
 								response.end();
 						}, action.maxPostSize());
 					}
-				} else if (next) {
-					next();
 				} else {
-					root.handleStaticResponse( request, response );
+					root.handleStaticResponse( request, response, (next ? function (err) {
+						if (err) {
+							next();
+						}
+					} : undefined));
 				}
-			} else if (next) {
-				next();
 			} else {
-				root.handleStaticResponse( request, response );
+				root.handleStaticResponse( request, response, (next ? function (err) {
+					if (err) {
+						next();
+					}
+				} : undefined ));
 			}
 		};
 
@@ -893,17 +922,21 @@ var _config	= {
 		};
 		return route;
 	},
+	getMountUpdateUrl	: function (url) {
+		// console.info("routeMatch moduleObject.mountpath = ", moduleObject.mountpath);
+		if (moduleObject.mountpath !== "/") {
+			if (moduleObject.mountpath instanceof RegExp) {
+				var m	= url.match(moduleObject.mountpath);
+				url	= '/'+url.substring((m[0] || "").length).replace(/^\/+/);
+			} else if (typeof(moduleObject.mountpath) === "string") {
+				url	= '/'+url.substring(moduleObject.mountpath.length).replace(/^\/+/);
+			}
+		}
+		return url;
+	},
 	routeMatch	: function (route, url, noMountCheck, mount) {
 		if (!noMountCheck) {
-			// console.info("routeMatch moduleObject.mountpath = ", moduleObject.mountpath, noMountCheck, route, url);
-			if (moduleObject.mountpath !== "/") {
-				if (moduleObject.mountpath instanceof RegExp) {
-					var m	= url.match(moduleObject.mountpath);
-					url	= '/'+url.substring((m[0] || "").length).replace(/^\/+/);
-				} else if (typeof(moduleObject.mountpath) === "string") {
-					url	= '/'+url.substring(moduleObject.mountpath.length).replace(/^\/+/);
-				}
-			}
+			url	= moduleObject.getMountUpdateUrl(url);
 		}
 
 		if (route === false) {
@@ -1029,7 +1062,7 @@ var appInstance			= {
 };
 
 var controllerInstance	= require(_config.getLibPath()+'controller.js');
-var viewerInstance		= require(_config.getLibPath()+'viewer.js');
+var viewerInstance		= require(_config.getLibPath()+'viewer.js')();
 var bootstrapInstance	= require(_config.cwd+'bootstrap.js');
 var sessionInstance		= require(_config.getLibPath()+'session.js');
 var templateMangerInstance	= require(_config.getLibPath()+"template-manager.js");
@@ -1164,6 +1197,9 @@ var moduleObject	= {
 			appInstance.console.warn("Unknown setting '"+p+"'");
 		}
 		return this;
+	},
+	getMountUpdateUrl	: function () {
+		return _config.getMountUpdateUrl.apply(_config, arguments);
 	}
 };
 
@@ -1254,7 +1290,15 @@ moduleObject.listen = function(){
 								mount	: true,
 								callback	: function(req, res, next){
 									// console.log("INFO \"use\" callback.handle detected", callback.route, callback.mountpath);
-									callback.handle(req, res, next, true);
+									req.app	= function () {
+										return callback;
+									};
+									callback.handle(req, res, function () {
+										req.app	= function () {
+											return moduleObject;
+										};
+										next();
+									}, true);
 								}
 							});
 						} else if (type === "use" && (callback instanceof _classes.http.Server)) {
