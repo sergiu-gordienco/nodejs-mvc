@@ -31,7 +31,7 @@ var extendResponseRequest	= function (res, req) {
 		return moduleObject;
 	};
 	request.originalUrl	= request.originalUrl || req.url;
-	
+
 	Object.defineProperty(request, 'isHttps', {
 		get: function() { return ( request.connection ? ( request.connection.encrypted ? true : false ) : false ); },
 		set: function(v) {},
@@ -185,7 +185,7 @@ var extendResponseRequest	= function (res, req) {
 		// });
 		// TODO request.fresh
 		// TODO request.stale
-		
+
 		Object.defineProperty(request, 'baseUrl', {
 			// TODO
 			get: function() { return request.app().mountpath; },
@@ -257,8 +257,8 @@ var extendResponseRequest	= function (res, req) {
 		});
 		Object.defineProperty(request, 'ip', {
 			get: function() {
-				return request.headers['x-forwarded-for'] || 
-				request.connection.remoteAddress || 
+				return request.headers['x-forwarded-for'] ||
+				request.connection.remoteAddress ||
 				request.socket.remoteAddress ||
 				request.connection.socket.remoteAddress || undefined;
 			},
@@ -416,7 +416,7 @@ var extendResponseRequest	= function (res, req) {
 			// });
 
 			res.on('drain', function() {
-				// Resume the read stream when the write stream gets hungry 
+				// Resume the read stream when the write stream gets hungry
 				readStream.resume();
 			});
 
@@ -531,12 +531,16 @@ var extendResponseRequest	= function (res, req) {
 	// TODO res.type()
 	// TODO res.links()
 	// TODO res.location()
-	// TODO res.vary() 
+	// TODO res.vary()
 };
 
 
 
 var _config	= {
+	apps	: {
+		parents	: [],
+		childs	: []
+	},
 	httpListners	: {
 		"use"	: [],
 		"preuse"	: [],
@@ -895,7 +899,7 @@ var _config	= {
 		// 		request.sessionDyn.setExpire( root.sessionExpire );
 		// 	}
 		// }
-		
+
 	},
 	routeNormalize	: function (route) {
 		if (
@@ -1203,6 +1207,57 @@ var moduleObject	= {
 	}
 };
 
+/**
+ * Start:
+ * defining parent and child application handlers
+ */
+if ('defining') {
+	Object.defineProperty(moduleObject, 'parent', {
+		get: function() {
+			return _config.apps.parents[0];
+		},
+		configurable: false
+	});
+	Object.defineProperty(moduleObject, 'parents', {
+		get: function() {
+			return _config.apps.parents;
+		},
+		configurable: false
+	});
+	Object.defineProperty(moduleObject, 'childs', {
+		get: function() {
+			return _config.apps.childs;
+		},
+		configurable: false
+	});
+
+	Object.defineProperty(appInstance, 'parent', {
+		get: function() {
+			return _config.apps.parents[0];
+		},
+		configurable: false
+	});
+	Object.defineProperty(appInstance, 'parents', {
+		get: function() {
+			return _config.apps.parents;
+		},
+		configurable: false
+	});
+	Object.defineProperty(appInstance, 'childs', {
+		get: function() {
+			return _config.apps.childs;
+		},
+		configurable: false
+	});
+	moduleObject.attachParent	= function (app) {
+		_config.apps.parents.push(app);
+	};
+}
+/**
+ * End
+ */
+
+
 moduleObject._functions	= {
 	isValidIdentifier	: function( id ) {
 		return ( typeof(id) == "string" && id.match(/^[a-z][a-z0-9\-]+[a-z0-9]$/i) );
@@ -1285,6 +1340,10 @@ moduleObject.listen = function(){
 						if (type === "use" && typeof(callback.handle) === "function") {
 							callback.route	= (route || "/");
 							callback.mountpath	= (route[0] || "/");
+							_config.apps.childs.push(callback);
+							if (callback.attachParent && typeof(callback.attachParent) === "function") {
+								callback.attachParent(moduleObject);
+							}
 							_config.httpListners[type].push({
 								route	: route,
 								mount	: true,
