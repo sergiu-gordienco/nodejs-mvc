@@ -103,9 +103,8 @@ var extendResponseRequest	= function (res, req) {
 		return request.urlObject.file_vars;
 	};
 
-	res.redirect = function redirect(url) {
+	res.redirect = function (url) {
 		var address = url;
-		var body;
 		var status = 302;
 
 		// allow status / url
@@ -116,21 +115,12 @@ var extendResponseRequest	= function (res, req) {
 			}
 		}
 
+		res.statusCode = status;
 		// Set location header
-		this.set('Location', address);
-		address = this.get('Location');
+		if (!res.headersSent) res.set('Location', address);
 
-		body = http_statuses[status] + '. Redirecting to ' + encodeURI(address);
-
-		// Respond
-		this.statusCode = status;
-		this.set('Content-Length', Buffer.byteLength(body));
-
-		if (this.req.method === 'HEAD') {
-			this.end();
-		} else {
-			this.end(body);
-		}
+		res.end();
+		return;
 	};
 
 	// TODO docs
