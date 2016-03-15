@@ -4,6 +4,7 @@ var http_statuses   = require(__dirname + "/objects/http_statuses.js");
 var appBuilder	= function () {
 
 	var _classes	= {
+		zlib	: require("zlib"),
 		fs		: require('fs'),
 		http	: require('http'),
 		url		: require('url'),
@@ -452,18 +453,45 @@ var extendResponseRequest	= function (res, req) {
 						res.statusCode = 304;
 						res.end();
 					} else {
+						var acceptEncoding = request.headers['accept-encoding'];
+						var raw = function () {
+							var raw = _classes.fs.createReadStream(filePath);
+							// raw.on('error', callback || function () {
+							// 	var er; try { res.end(); } catch (er) {};
+							// });
+							// raw.on('close', callback || function () {
+							// 	var er; try { res.end(); } catch (er) {};
+							// });
+							return raw;
+						};
+						if (!acceptEncoding) {
+							acceptEncoding = '';
+						}
+
 						res.setHeader('Content-Type', _classes.extensions.mime(fileName || filePath || "file"));
-						res.setHeader('Content-Length', stat.size);
 						res.setHeader('ETag', etag);
 						res.statusCode = 200;
-						res.pipe(filePath, ( callback || function (err) {
-								if (err) {
-									appInstance._events.onError(err, { res: res, status : 404, end : true });
-								} else {
-									res.end();
-								}
-							}), req
-						);
+						var resError	= undefined;
+						if (acceptEncoding.match(/\bdeflate\b/)) {
+							console.log(acceptEncoding, filePath);
+							res.setHeader('content-encoding', 'deflate');
+							if (callback) { res.on('end', function () { callback(resError) }); res.on('error', function (err) { resError = err; }); }
+							raw().pipe(_classes.zlib.createDeflate()).pipe(res);
+						} else if (acceptEncoding.match(/\bgzip\b/)) {
+							res.setHeader('content-encoding', 'gzip');
+							if (callback) { res.on('end', function () { callback(resError) }); res.on('error', function (err) { resError = err; }); }
+							raw().pipe(_classes.zlib.createGzip()).pipe(res);
+						} else {
+							res.setHeader('Content-Length', stat.size);
+							res.pipe(filePath, ( callback || function (err) {
+									if (err) {
+										appInstance._events.onError(err, { res: res, status : 404, end : true });
+									} else {
+										res.end();
+									}
+								}), req
+							);
+						}
 					}
 				}
 			});
