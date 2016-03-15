@@ -64,7 +64,7 @@ Fast and simple MCV in nodejs
 
 	server.listen(8080);
 
-	// method to call handleStaticResponse 
+	// method to call handleStaticResponse
 	// in callback you get only one parameter ( err ) in case of file was not found
 	//	app.handleStaticResponse(request, response, path, callback);
 	//	app.handleStaticResponse(request, response, path);
@@ -112,10 +112,10 @@ Fast and simple MCV in nodejs
 		// check if user has a session
 		app.handleServerMidleware(data, {}, function (err) {
 			if (!err) {
-				console.log("authorization-no-session::signedCookies: ", data.session, data.cookies, data.signedCookies);
+				console.log("authorization-no-session::Cookies: ", data.session, data.cookies);
 				accept(null, true);
 			} else {
-				console.log("authorization-session::signedCookies: ", data.session, data.cookies, data.signedCookies);
+				console.log("authorization-session::Cookies: ", data.session, data.cookies);
 				accept(null, true);
 			}
 		});
@@ -132,7 +132,7 @@ Fast and simple MCV in nodejs
 
 				// adding cron form refreshing session
 				sessionCronTimer	= setInterval(function () {
-					client.handshake.session.reload( function () { 
+					client.handshake.session.reload( function () {
 						client.handshake.session.touch().save();
 					});
 				}, 2000);
@@ -502,7 +502,7 @@ On template Rendering we have following variables
 
 	// variables that a sent from controllers
 	var vars	= {};
-	
+
 	var env		= {
 		error	: [],
 		vars	: envVars,
@@ -515,7 +515,7 @@ On template Rendering we have following variables
 
 	// env vars sent from app
 	env.vars = {
-		response : [object] // http response object 
+		response : [object] // http response object
 	}
 ```
 
@@ -981,42 +981,42 @@ but javascript is working with **Unicode**
 	"5f4dcc3b5aa765d61d8327deb882cf99"
 ```
 
-#### For encoding JavaScript UNICODE code into Base64 
+#### For encoding JavaScript UNICODE code into Base64
 ```javascript
 	String.prototype.base64encode	: function() { return btoa(this.utf8need()); },
 ```
 
-#### For decoding JavaScript UNICODE code into Base64 
+#### For decoding JavaScript UNICODE code into Base64
 ```javascript
 	String.prototype.base64decode	: function() { return atob(this).unicode(); },
 ```
 
-#### For encoding JavaScript UTF8 and ASCII code into Base64 
+#### For encoding JavaScript UTF8 and ASCII code into Base64
 ```javascript
 	String.prototype.base64encodeClean	: function() { return btoa(this); },
 ```
 
-#### For decoding JavaScript UTF8 and ASCII code into Base64 
+#### For decoding JavaScript UTF8 and ASCII code into Base64
 ```javascript
 	String.prototype.base64decodeClean	: function() { return atob(this); },
 ```
 
-#### Encrypt a String using a passKey and TEA algorithm 
+#### Encrypt a String using a passKey and TEA algorithm
 ```javascript
 	String.prototype.encryptTea	: function(p) { /* ... */ },
 ```
 
-#### Decrypt a String using a passKey and TEA algorithm 
+#### Decrypt a String using a passKey and TEA algorithm
 ```javascript
 	String.prototype.decryptTea	: function(p) { /* ... */ },
 ```
 
-#### Encrypt a String using a passKey and passlength ( 128, 192, 256 ) in AES algorithm 
+#### Encrypt a String using a passKey and passlength ( 128, 192, 256 ) in AES algorithm
 ```javascript
 	String.prototype.encryptAes	: function(passKey, passlength) { /* ... */ },
 ```
 
-#### Decrypt a String using a passKey and passlength ( 128, 192, 256 ) in AES algorithm 
+#### Decrypt a String using a passKey and passlength ( 128, 192, 256 ) in AES algorithm
 ```javascript
 	String.prototype.decryptAes	: function(passKey, passlength) { /* ... */ },
 ```

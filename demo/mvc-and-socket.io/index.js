@@ -10,7 +10,7 @@ var server	= require("http").createServer(function( request, response, next ) {
 });
 
 app.sessionCookieName("ssid");
-app.sessionDynCookieName("ssid");
+app.sessionDynCookieName("ssiddyn");
 app.sessionDynCookieDomain(false);
 app.sessionDynAutoUpdate(true);
 app.sessionDynExpire(60*60*2);
@@ -34,10 +34,10 @@ io.set('authorization', function(data, accept) {
 	// check if user has a session
 	app.handleServerMidleware(data, {}, function (err) {
 		if (!err) {
-			console.log("authorization-no-session::signedCookies: ", data.session, data.cookies, data.signedCookies);
+			console.log("authorization-no-session::Cookies: ", data.session, data.cookies);
 			accept(null, true);
 		} else {
-			console.log("authorization-session::signedCookies: ", data.session, data.cookies, data.signedCookies);
+			console.log("authorization-session::Cookies: ", data.session, data.cookies);
 			accept(null, true);
 		}
 	});
@@ -54,7 +54,7 @@ io.sockets.on('connection', function (client) {
 
 			// adding cron form refreshing session
 			sessionCronTimer	= setInterval(function () {
-				client.handshake.session.reload( function () { 
+				client.handshake.session.reload( function () {
 					client.handshake.session.touch().save();
 				});
 			}, 2000);
@@ -144,4 +144,3 @@ server.listen(8080);
 
 console.log("Lunching server on port 8080");
 console.log("test on: http://localhost:8080");
-

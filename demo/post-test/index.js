@@ -10,7 +10,7 @@ var server	= require("http").createServer(function( request, response, next ) {
 });
 
 app.sessionCookieName("ssid");
-app.sessionDynCookieName("ssid");
+app.sessionDynCookieName("ssiddyn");
 app.sessionDynCookieDomain(false);
 app.sessionDynAutoUpdate(true);
 app.sessionDynExpire(60*60*2);
@@ -49,4 +49,3 @@ server.listen(8080);
 
 console.log("Lunching server on port 8080");
 console.log("test on: http://localhost:8080");
-

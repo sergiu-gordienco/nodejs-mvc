@@ -103,14 +103,14 @@ module.exports	= function( req, res, app, options ) {
 		},
 		sessionId	: function() {
 			var ssid	= false;
-			ssid	= _config.ssid || req.signedCookies[_config.cookieName] || req.signedCookies[_config.cookieName] /*|| req.getVars().ssid*/ || "";
+			ssid	= _config.ssid || req.cookie(_config.cookieName, { secure: true }) || req.cookie(_config.cookieName) /*|| req.getVars().ssid*/ || "";
 			if( !ssid ) {
 				ssid	= _functions.hashSession(_functions.genSessionId());
 				_config.ssid	= ssid;
 				var o	= {
 					httpOnly	: false,
 					overwrite	: true,
-					signed		: true,
+					signed		: false,
 					expire		: new Date( new Date().valueOf() + _sessionsLife * 1000 )
 				};
 				if( _config.cookieDomain )

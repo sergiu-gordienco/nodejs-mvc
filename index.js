@@ -16,9 +16,7 @@ var appBuilder	= function () {
 			}
 			return a;
 		},
-		cookie	: require('cookie'),
-		cookieParser	: require('cookie-parser'),
-		cookieSignature	: require('cookie-signature'),
+		cookies	: require('cookies'),
 		expressSession	: require('express-session'),
 		extensions		: require(__dirname+"/objects/extensions.js")
 	};
@@ -135,6 +133,12 @@ var extendResponseRequest	= function (res, req) {
 			default:
 				return req.headers[name];
 		}
+	};
+
+	req.cookies	= req.cookieManager;
+
+	req.cookie	= function (name, options) {
+		return req.cookieManager.get(name, (options || {}));
 	};
 
 	res.get = res.getHeader;
@@ -309,48 +313,22 @@ var extendResponseRequest	= function (res, req) {
 
 	res.clearCookie = function(name, options){
 		var opts = { expires: new Date(1), path: '/' };
-		return _classes.cookie(name, '', options
-		? _classes.merge(opts, options)
-		: opts);
+		return req.cookieManager.set(name, '', options ? _classes.merge(opts, options) : opts);
 	};
 
-	res.cookie = function(name, val, options){
-		var sign	= _classes.cookieSignature.sign;
-		options = _classes.merge({}, options);
-		var secret = this.req.cookieSecret;
-		var signed = options.signed;
-		if (signed && !secret) throw new Error('cookieParser("secret") required for signed cookies');
-		if ('number' == typeof val) val = val.toString();
-		if ('object' == typeof val) val = 'j:' + JSON.stringify(val);
-		if (signed) val = 's:' + sign(val, secret);
-		if ('maxAge' in options) {
-			options.expires = new Date(Date.now() + options.maxAge);
-			options.maxAge /= 1000;
-		}
-		if (null == options.path) options.path = '/';
-		var headerVal = _classes.cookie.serialize(name, String(val), options);
-
-		// supports multiple 'res.cookie' calls by getting previous value
-		var prev = res.get('Set-Cookie');
-		if (prev) {
-			if (Array.isArray(prev)) {
-				headerVal = prev.concat(headerVal);
-			} else {
-				headerVal = [prev, headerVal];
-			}
-		}
-		res.set('Set-Cookie', headerVal);
+	res.cookie = function(name, val, options) {
+		req.cookieManager.set(name, val, (options || {}));
 		return res;
 	};
 
-	res.pipe = function (filePath, callback, req) {
+	res.pipe = function (filePath, cb, req) {
 		if (!req)
 			req	= request;
+		var returned = false;
+		var callback = function (err) { if (!returned && cb) cb(err) };
 		_classes.fs.stat(filePath, function (err, stat) {
 			if (err) {
-				if (callback) {
-					callback(err);
-				}
+				callback(err);
 				return;
 			}
 
@@ -385,35 +363,30 @@ var extendResponseRequest	= function (res, req) {
 			}
 
 
-			readStream.on('data', function(data) {
-				var flushed = res.write(data);
-				// Pause the read stream when the write stream gets saturated
-				if(!flushed)
-					readStream.pause();
-			});
 
 			// This catches any errors that happen while creating the readable stream (usually invalid names)
 			readStream.on('error', function(err) {
-				if (callback) {
-					callback(err);
-				}
+				callback(err);
 			});
 
 			// // This will wait until we know the readable stream is actually valid before piping
-			// readStream.on('open', function () {
-			// 	// This just pipes the read stream to the response object (which goes to the client)
-			// 	readStream.pipe(res);
-			// });
+			readStream.on('open', function () {
+				// This just pipes the read stream to the response object (which goes to the client)
+				readStream.pipe(res);
+			});
 
-			res.on('drain', function() {
+			res.on('close', function() {
 				// Resume the read stream when the write stream gets hungry
-				readStream.resume();
+				readStream.destroy();
+			});
+
+			res.on('end', function() {
+				// Resume the read stream when the write stream gets hungry
+				readStream.destroy();
 			});
 
 			readStream.on('end', function() {
-				if (callback) {
-					callback(undefined);
-				}
+				callback(undefined);
 			});
 		});
 	};
@@ -577,7 +550,6 @@ var _config	= {
 	sessionKey		: "ssid",
 	sessionSecret	: "MY_SECRET",
 	// cookie secret
-	cookieHandler	: false,
 	cookieSecret	: false, // default use session
 	quiteHandler	: true,
 	// other config
@@ -630,9 +602,6 @@ var _config	= {
 	},
 	handleServerMidleware	: function (request, response, next) {
 		var root	= _config;
-		if (!root.cookieHandler) {
-			root.cookieHandler	= _classes.cookieParser(root.cookieSecret || root.sessionSecret);
-		};
 		if (!root.sessionHandler) {
 			root.sessionHandler	= _classes.expressSession({
 				secret	: root.sessionSecret,
@@ -641,57 +610,47 @@ var _config	= {
 				saveUninitialized: true,
 				store	: root.sessionStore
 			});
-		};
-		root.cookieHandler(request, response, function (err) {
+		}
+		request.cookieManager	= new _classes.cookies(request, response, { "keys" : ( root.cookieSecret || root.sessionSecret ) });
+		if (request) { // TODO
+			request.secret	= request.isHttps;
+			request.cookieSecret	= root.cookieSecret || root.sessionSecret;
+		}
+		extendResponseRequest(response, request);
+		root.sessionHandler(request, response, function (err) {
 			if (err) {
-				if (!root.quiteHandler) {
-					throw err;
+				if (typeof(next) === "function") {
+					return next(err, {
+						request	: request,
+						response	: response
+					});
 				} else {
-					appInstance.console.error(err);
+					if (!root.quiteHandler) {
+						throw err;
+					} else {
+						appInstance.console.error(err);
+					}
 				}
-			};
-			// console.log("response object", response, err);
-			// console.log("Cookies", arguments);
-			if (request) { // TODO
-				request.secret	= request.isHttps;
-				request.cookieSecret	= root.cookieSecret || root.sessionSecret;
-			}
-			extendResponseRequest(response, request);
-			root.sessionHandler(request, response, function (err) {
-				if (err) {
-					if (typeof(next) === "function") {
-						return next(err, {
-							request	: request,
-							response	: response
-						});
-					} else {
-						if (!root.quiteHandler) {
-							throw err;
-						} else {
-							appInstance.console.error(err);
-						}
+			} else {
+				if (!request.sessionDyn) {
+					request.sessionDyn	= new sessionInstance( request, response, appInstance, {
+						expire			: root.sessionExpire,
+						cookieName		: root.sessionCookieName,
+						cookieDomain	: root.sessionCookieDomain
+					} );
+					if( root.sessionExpire && root.sessionAutoUpdate ) {
+						request.sessionDyn.setExpire( root.sessionExpire );
 					}
+				}
+				if (typeof(next) === "function") {
+					return next();
 				} else {
-					if (!request.sessionDyn) {
-						request.sessionDyn	= new sessionInstance( request, response, appInstance, {
-							expire			: root.sessionExpire,
-							cookieName		: root.sessionCookieName,
-							cookieDomain	: root.sessionCookieDomain
-						} );
-						if( root.sessionExpire && root.sessionAutoUpdate ) {
-							request.sessionDyn.setExpire( root.sessionExpire );
-						}
-					}
-					if (typeof(next) === "function") {
-						return next();
-					} else {
-						appInstance.console.error(new Error("No request handler"));
-					}
-				};
-				// console.log("Session", arguments);
-				// console.log("Request", request);
-				// console.log("Response", response);
-			});
+					appInstance.console.error(new Error("No request handler"));
+				}
+			}
+			// console.log("Session", arguments);
+			// console.log("Request", request);
+			// console.log("Response", response);
 		});
 	},
 	runHttpListners	: function (type, req, res, callback, onMatch) {
