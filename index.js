@@ -473,7 +473,6 @@ var extendResponseRequest	= function (res, req) {
 						res.statusCode = 200;
 						var resError	= undefined;
 						if (acceptEncoding.match(/\bdeflate\b/)) {
-							console.log(acceptEncoding, filePath);
 							res.setHeader('content-encoding', 'deflate');
 							if (callback) { res.on('end', function () { callback(resError) }); res.on('error', function (err) { resError = err; }); }
 							raw().pipe(_classes.zlib.createDeflate()).pipe(res);
