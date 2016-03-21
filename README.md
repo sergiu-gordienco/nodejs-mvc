@@ -451,7 +451,7 @@ it is very optimized, and practically, doesn't store additional metadata.
  * `request.controllerAction`   - current action name
  * `request.params`             - current parameters array
  * `request.postData`           - `Buffer Object` where was stored original POST data
- * `request.postVars()`         - returns `POST` vars stored in a object
+ * `request.postVars()`         - returns `POST` vars stored in a object ( available as `request.body` )
  * `request.fileVars()`         - returns `FILE` vars stored in a object
  * `request.sessionDyn`         - returns `sessionDyn Object`
  * `request.session`            - returns `session Object`

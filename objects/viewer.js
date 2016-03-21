@@ -27,6 +27,12 @@ var buildViewer	= function () {
 		},
 		render	: function( response, view, options ) {
 			// { name, path, code }
+			var getStackTrace = function() {
+				var obj = {};
+				Error.captureStackTrace(obj, getStackTrace);
+				return obj.stack;
+			};
+			var err;
 			if( view.path.match(/\.(tpl|fbx-tpl)$/) ) {
 				_classes.facebox.updateEnvVars(_configObject.envVars);
 				// _classes.facebox.updateEnvVars({ response: response });
@@ -43,7 +49,12 @@ var buildViewer	= function () {
 					if (!response.headersSent) {
 						response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
 					}
-					response.write(html);
+					if (!response.finished) {
+						response.write(html);
+						response.end();
+					} else {
+						console.log("Write Response but it is Finished", getStackTrace());
+					}
 				});
 			} else if( view.path.match(/\.(jade)$/) ) {
 				_classes.facebox.updateEnvVars(_configObject.envVars);
@@ -59,12 +70,22 @@ var buildViewer	= function () {
 				if (!response.headersSent) {
 					response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
 				}
-				response.write(html);
+				if (!response.finished) {
+					response.write(html);
+					response.end();
+				} else {
+					console.log("Write Response but it is Finished", getStackTrace());
+				}
 			} else {
 				if (!response.headersSent) {
 					response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
 				}
-				response.write(_classes.fs.readFileSync( view.path ));
+				if (!response.finished) {
+					response.write(_classes.fs.readFileSync( view.path ));
+					response.end();
+				} else {
+					console.log("Write Response but it is Finished", getStackTrace());
+				}
 			}
 		}
 	};

@@ -597,10 +597,10 @@ var _config	= {
 		// return 'force-static';	// tread request as static request
 		// return 'close';	// close connection // end response
 	},
-	onMaxPostSize		: function( request, response, app, action ) {
-		response.writeHead(403, {'Content-Type': 'text/plain; charset=utf-8'});
-		response.end('Max Post File Size');
-		return false;	// if false action processing is broken
+	onMaxPostSize		: function( request, response, app, maxPostSize ) {
+		request.ERROR_MAX_POST_SIZE = true;
+		appInstance.console.error("ERROR_MAX_POST_SIZE", "REACHED LIMIT OF " + maxPostSize)
+		return true;	// if false abbord data colecting
 	},
 	handleStaticResponse	: function( request, response, path, callback ) {
 		if (typeof(path) === "function") {
@@ -756,7 +756,7 @@ var _config	= {
 						request.postData	= Buffer.concat([request.postData, chunk]);
 					} else {
 						// request.postDataState	= false;
-						if(!root.onMaxPostSize( request, response, appInstance, action )) {
+						if(!root.onMaxPostSize( request, response, appInstance, maxPostSize )) {
 							var e;
 							try {
 								request.abort();
@@ -821,7 +821,7 @@ var _config	= {
 						if( !action.autoClose() )
 							response.end();
 					} else {
-						postDataColect(request, function () {
+						postDataColect(request, function (err) {
 							// if( request.postDataState ) {
 								action.run( request, response );
 							// }
@@ -854,7 +854,7 @@ var _config	= {
 				mvcRun();
 			}, function (cb) {
 				// console.log("POST Data ::Start");
-				postDataColect(request, function () {
+				postDataColect(request, function (err) {
 					// console.log("POST Data ::callback");
 					cb();
 				});
@@ -981,9 +981,15 @@ var appInstance			= {
 			}
 		},
 		error	: function() {
+			var getStackTrace = function() {
+				var obj = {};
+				Error.captureStackTrace(obj, getStackTrace);
+				return obj.stack;
+			};
 			var args = Array.prototype.slice.call(arguments);
 			console.log("\033[0;40;31m");
 			console.error.apply(console, args);
+			console.log(getStackTrace());
 			console.log("\033[0m");
 		}
 	},
