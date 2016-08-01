@@ -47,7 +47,7 @@ var buildViewer	= function () {
 						}
 					}
 					if (!response.headersSent) {
-						response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+						response.set('Content-Type', 'text/html; charset=utf-8');
 					}
 					if (!response.finished) {
 						response.write(html);
@@ -68,7 +68,7 @@ var buildViewer	= function () {
 					vars	: options
 				});
 				if (!response.headersSent) {
-					response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+					response.set('Content-Type', 'text/html; charset=utf-8');
 				}
 				if (!response.finished) {
 					response.write(html);
@@ -78,7 +78,7 @@ var buildViewer	= function () {
 				}
 			} else {
 				if (!response.headersSent) {
-					response.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+					response.set('Content-Type', 'text/html; charset=utf-8');
 				}
 				if (!response.finished) {
 					response.write(_classes.fs.readFileSync( view.path ));

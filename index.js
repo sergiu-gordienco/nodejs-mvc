@@ -1,3 +1,6 @@
+/* jshint -W014 */
+/* jshint -W002 */
+
 var http_statuses   = require(__dirname + "/objects/http_statuses.js");
 
 
@@ -211,7 +214,7 @@ var extendResponseRequest	= function (res, req) {
 			configurable: true
 		});
 		Object.defineProperty(request, 'hostname', {
-			get: function() { return request.headers.host ? (request.headers.host + '').replace(/:\d+$/,'') : undefined },
+			get: function() { return request.headers.host ? (request.headers.host + '').replace(/:\d+$/,'') : undefined; },
 			set: function(v) {
 				appInstance.console.warn("[Request.hostname] is not configurable");
 			},
@@ -326,7 +329,7 @@ var extendResponseRequest	= function (res, req) {
 		if (!req)
 			req	= request;
 		var returned = false;
-		var callback = function (err) { if (!returned && cb) cb(err) };
+		var callback = function (err) { if (!returned && cb) cb(err); };
 		_classes.fs.stat(filePath, function (err, stat) {
 			if (err) {
 				callback(err);
@@ -444,14 +447,14 @@ var extendResponseRequest	= function (res, req) {
 						res.setHeader('Content-Type', _classes.extensions.mime(fileName || filePath || "file"));
 						res.setHeader('ETag', etag);
 						res.statusCode = 200;
-						var resError	= undefined;
+						var resError;
 						if (acceptEncoding.match(/\bdeflate\b/)) {
 							res.setHeader('content-encoding', 'deflate');
-							if (callback) { res.on('end', function () { callback(resError) }); res.on('error', function (err) { resError = err; }); }
+							if (callback) { res.on('end', function () { callback(resError); }); res.on('error', function (err) { resError = err; }); }
 							raw().pipe(_classes.zlib.createDeflate()).pipe(res);
 						} else if (acceptEncoding.match(/\bgzip\b/)) {
 							res.setHeader('content-encoding', 'gzip');
-							if (callback) { res.on('end', function () { callback(resError) }); res.on('error', function (err) { resError = err; }); }
+							if (callback) { res.on('end', function () { callback(resError); }); res.on('error', function (err) { resError = err; }); }
 							raw().pipe(_classes.zlib.createGzip()).pipe(res);
 						} else {
 							res.setHeader('Content-Length', stat.size);
@@ -467,11 +470,11 @@ var extendResponseRequest	= function (res, req) {
 					}
 				}
 			});
-		} catch (err) {};
+		} catch (err) {}
 		if (err) {
 			try {
 				appInstance._events.onError(err, { res: res, status : 500, end : true });
-			} catch (err) {};
+			} catch (err) {}
 		}
 	};
 	res.status	= function (code) {
@@ -553,7 +556,6 @@ var _config	= {
 		"m-search"		: [],
 		"notify"		: [],
 		"patch"			: [],
-		"post"			: [],
 		"propfind"		: [],
 		"proppatch"		: [],
 		"purge"			: [],
@@ -599,7 +601,7 @@ var _config	= {
 	},
 	onMaxPostSize		: function( request, response, app, maxPostSize ) {
 		request.ERROR_MAX_POST_SIZE = true;
-		appInstance.console.error("ERROR_MAX_POST_SIZE", "REACHED LIMIT OF " + maxPostSize)
+		appInstance.console.error("ERROR_MAX_POST_SIZE", "REACHED LIMIT OF " + maxPostSize);
 		return true;	// if false abbord data colecting
 	},
 	handleStaticResponse	: function( request, response, path, callback ) {
@@ -638,11 +640,16 @@ var _config	= {
 				store	: root.sessionStore
 			});
 		}
-		request.cookieManager	= new _classes.cookies(request, response, { "keys" : ( root.cookieSecret || root.sessionSecret ) });
 		if (request) { // TODO
 			request.secret	= request.isHttps;
 			request.cookieSecret	= root.cookieSecret || root.sessionSecret;
 		}
+		request.cookieManager	= request.cookieManager || new _classes.cookies(request, response, (
+			request.secret ? {
+				// TODO encode cookie keys correctly
+				"keys" : [( root.cookieSecret || root.sessionSecret )]
+			} : {}
+		));
 		extendResponseRequest(response, request);
 		root.sessionHandler(request, response, function (err) {
 			if (err) {
@@ -659,7 +666,7 @@ var _config	= {
 					}
 				}
 			} else {
-				if (!request.sessionDyn) {
+				if (!request.sessionDyn && root.sessionCookieName) {
 					request.sessionDyn	= new sessionInstance( request, response, appInstance, {
 						expire			: root.sessionExpire,
 						cookieName		: root.sessionCookieName,
@@ -668,6 +675,7 @@ var _config	= {
 					if( root.sessionExpire && root.sessionAutoUpdate ) {
 						request.sessionDyn.setExpire( root.sessionExpire );
 					}
+					request.sessionDyn.sessionId();
 				}
 				if (typeof(next) === "function") {
 					return next();
@@ -717,9 +725,9 @@ var _config	= {
 				// console.log("CHECK STATE handleServerResponse", next);
 				root.runHttpListners("use", request, response,
 					isMount
-					? function () { return root.handleServerResponseLogic(request, response, next) }
+					? function () { return root.handleServerResponseLogic(request, response, next); }
 					: (
-						next || function () { return root.handleServerResponseLogic(request, response) }
+						next || function () { return root.handleServerResponseLogic(request, response); }
 					)
 				);
 			});
@@ -744,7 +752,7 @@ var _config	= {
 			} else if (postDataStatus == 'error') {
 				callback();
 				return;
-			};
+			}
 			if (typeof(maxPostSize) !== "number") {
 				maxPostSize	= root.maxPostSize;
 			}
@@ -760,7 +768,7 @@ var _config	= {
 							var e;
 							try {
 								request.abort();
-							} catch(e) {};
+							} catch(e) {}
 							return false;
 						}
 					}
@@ -768,7 +776,7 @@ var _config	= {
 			});
 			request.on("error", function(err) {
 				postDataStatus	= 'error';
-				if ("file_vars" in request.urlObject) {
+				if ("file_vars" in requfest.urlObject) {
 					delete request.urlObject.file_vars;
 				}
 				if ("post_vars" in request.urlObject) {
@@ -783,7 +791,7 @@ var _config	= {
 					request.end();
 				} catch (er) {
 					// appInstance.console.error(er);
-				};
+				}
 			});
 			request.on("end", function() {
 				postDataStatus	= 'done';
@@ -899,7 +907,7 @@ var _config	= {
 					route	= false;
 				}
 			}
-		};
+		}
 		return route;
 	},
 	getMountUpdateUrl	: function (url) {
@@ -955,44 +963,26 @@ var _config	= {
 		response.redirect( url, status);
 	}
 };
+
+var controllerInstance	= require(_config.getLibPath()+'controller.js');
+var viewerInstance		= require(_config.getLibPath()+'viewer.js')();
+viewerInstance.updateEnvVars({
+	publicPath	: function () {
+		return moduleObject.getPublicPath.apply(moduleObject, []);
+	}
+});
+
+var bootstrapInstance	= require(_config.cwd+'bootstrap.js');
+var sessionInstance		= require(_config.getLibPath()+'session.js');
+var templateMangerInstance	= require(_config.getLibPath()+"template-manager.js");
+var consoleInstance		= require(_config.getLibPath()+'console.js')();
+consoleInstance.isDebugMode	= function () {
+	return _config.debug;
+};
+
 var _appInstanceVars	= {};
 var appInstance			= {
-	console		: {
-		log	: function() {
-			if (_config.debug) {
-				var args = Array.prototype.slice.call(arguments);
-				console.log.apply(console, args);
-			}
-		},
-		info	: function() {
-			if (_config.debug) {
-				var args = Array.prototype.slice.call(arguments);
-				args.unshift("\033[0;47;30m");
-				args.push("\033[0m");
-				console.log.apply(console, args);
-			}
-		},
-		warn	: function() {
-			if (_config.debug) {
-				var args = Array.prototype.slice.call(arguments);
-				args.unshift("\033[0;40;33m");
-				args.push("\033[0m");
-				console.log.apply(console, args);
-			}
-		},
-		error	: function() {
-			var getStackTrace = function() {
-				var obj = {};
-				Error.captureStackTrace(obj, getStackTrace);
-				return obj.stack;
-			};
-			var args = Array.prototype.slice.call(arguments);
-			console.log("\033[0;40;31m");
-			console.error.apply(console, args);
-			console.log(getStackTrace());
-			console.log("\033[0m");
-		}
-	},
+	console		: consoleInstance,
 	debug		: function( state ) {
 		if( typeof( state ) != "undefined" )
 			_config.debug	= !!state;
@@ -1047,11 +1037,6 @@ var appInstance			= {
 	}
 };
 
-var controllerInstance	= require(_config.getLibPath()+'controller.js');
-var viewerInstance		= require(_config.getLibPath()+'viewer.js')();
-var bootstrapInstance	= require(_config.cwd+'bootstrap.js');
-var sessionInstance		= require(_config.getLibPath()+'session.js');
-var templateMangerInstance	= require(_config.getLibPath()+"template-manager.js");
 
 
 _classes.emailInstance	= require(_config.getLibPath()+"email/index.js");
@@ -1094,43 +1079,43 @@ var moduleObject	= {
 	sessionDynExpire	: function( secconds ) {
 		if( typeof( secconds ) === "number" ) {
 			_config.sessionExpire	= secconds;
-		};
+		}
 		return _config.sessionExpire;
 	},
 	sessionDynCookieName	: function( name ) {
 		if( typeof( name ) === "string" ) {
 			_config.sessionCookieName	= name;
-		};
+		}
 		return _config.sessionCookieName;
 	},
 	sessionDynCookieDomain	: function( domain ) {
 		if( typeof( domain ) === "string" || domain === false ) {
 			_config.sessionCookieDomain	= domain;
-		};
+		}
 		return _config.sessionCookieDomain;
 	},
 	sessionDynAutoUpdate	: function( state ) {
 		if( typeof( state ) !== "undefined" ) {
 			_config.sessionAutoUpdate	= !!state;
-		};
+		}
 		return _config.sessionAutoUpdate;
 	},
 	sessionCookieName	: function( name ) {
 		if( typeof( name ) === "string" ) {
 			_config.sessionKey	= name;
-		};
+		}
 		return _config.sessionKey;
 	},
 	sessionSecretKey	: function( name ) {
 		if( typeof( name ) === "string" ) {
 			_config.sessionSecret	= name;
-		};
+		}
 		return _config.sessionSecret;
 	},
 	cookieSecretKey	: function( name ) {
 		if( typeof( name ) === "string" ) {
 			_config.cookieSecret	= name;
-		};
+		}
 		return _config.cookieSecret;
 	},
 	controllerExists	: function() {
@@ -1364,7 +1349,6 @@ moduleObject.listen = function(){
 
 
 appInstance._events.onError	= function( error, config ) {
-	appInstance.console.error( error );
 	if (config) {
 		if (config.res) {
 			if (config.status) {
@@ -1393,4 +1377,5 @@ var moduleDefault	= appBuilder();
 		moduleBuilder[i]	= moduleDefault[i];
 	}
 })());
+module.debugOnStart	= true;
 module.exports	= moduleBuilder;

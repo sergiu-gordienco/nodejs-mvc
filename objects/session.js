@@ -103,7 +103,15 @@ module.exports	= function( req, res, app, options ) {
 		},
 		sessionId	: function() {
 			var ssid	= false;
-			ssid	= _config.ssid || req.cookie(_config.cookieName, { secure: true }) || req.cookie(_config.cookieName) /*|| req.getVars().ssid*/ || "";
+			ssid	= _config.ssid || req.cookie(_config.cookieName) || req.cookie(_config.cookieName, { secure: true }) /*|| req.getVars().ssid*/ || "";
+			console.log(
+				"sessionId:: ",
+				ssid,
+				"\n",
+				req.cookies.get(_config.cookieName, { secure: true }),
+				"\n",
+				req.cookies.get(_config.cookieName)
+			);
 			if( !ssid ) {
 				ssid	= _functions.hashSession(_functions.genSessionId());
 				_config.ssid	= ssid;
@@ -116,6 +124,7 @@ module.exports	= function( req, res, app, options ) {
 				if( _config.cookieDomain )
 					o.domain	= _config.cookieDomain;
 				res.cookie( _config.cookieName, ssid, o );
+				console.log(_config.cookieName, ssid, o, req.headers);
 			}
 			if( !( ssid in _sessions ) ) {
 				var t = new Date().valueOf();

@@ -1,7 +1,7 @@
 /*
 	On template Rendering we have
 	following variables
-	
+
 	var vars	= {}; // variables that a sent from controllers
 	var env		= {
 		error	: [],
@@ -14,11 +14,25 @@
 	};
 	env.vars = {
 		// env varssent from app
-		response : [object] // http reponse object 
+		response : [object] // http reponse object
 	}
 */
 var faceboxTemplate	= function() {
 	var _fs		= require('fs');
+	var debugMode	= false;
+	var cacheFiles	= {};
+	var readFileSync	= function (addr) {
+		if (addr in cacheFiles) {
+			return cacheFiles[addr];
+		} else {
+			var content	= _fs.readFileSync( addr, { encoding: "utf-8" } );
+			if (!debugMode) {
+				cacheFiles[addr]	= content;
+			}
+			return content;
+		}
+	};
+
 	var root	= this;
 	var includeLevel	= 10;
 	var envVars			= {};
@@ -72,7 +86,7 @@ var faceboxTemplate	= function() {
 			}
 			try {
 				text = text.replace(/\{\{(include)\:(.*?)\}\}/g,function (match, p1, p2, offset, string) {
-					return _fs.readFileSync( parseAddr(p2), { encoding: "utf-8" } );
+					return readFileSync( parseAddr(p2) );
 				});
 			} catch(err) {
 				env.error.push(err);
@@ -80,7 +94,7 @@ var faceboxTemplate	= function() {
 			try {
 				text = text.replace(/\{\{(render)\:(.*?)\}\}/g,function (match, p1, p2, offset, string) {
 					var addr	= parseAddr(p2);
-					return publicObject.render( _fs.readFileSync(addr, { encoding: "utf-8" }), vars, {
+					return publicObject.render( readFileSync(addr), vars, {
 						error	: env.error,
 						vars	: envVars,
 						path	: addr,
@@ -138,13 +152,13 @@ var faceboxTemplate	= function() {
 						text = text.split(replacers[i].id).join('<style type="text/css">\n'+replacers[i].code+'\n</style>');
 				break;
 					case 'action-read':
-						text = text.split(replacers[i].id).join(_fs.readFileSync( parseAddr(replacers[i].param), { encoding: "utf-8"}));
+						text = text.split(replacers[i].id).join(readFileSync( parseAddr(replacers[i].param)));
 				break;
 					case 'action-read-base64':
-						text = text.split(replacers[i].id).join(_fs.readFileSync( parseAddr(replacers[i].param), { encoding: "utf-8"}).base64encode());
+						text = text.split(replacers[i].id).join(readFileSync( parseAddr(replacers[i].param)).base64encode());
 				break;
 					case 'action-read-hex':
-						text = text.split(replacers[i].id).join(_fs.readFileSync( parseAddr(replacers[i].param), { encoding: "utf-8"}).toHex());
+						text = text.split(replacers[i].id).join(readFileSync( parseAddr(replacers[i].param)).toHex());
 				break;
 				}
 			} catch(err) {
@@ -153,7 +167,7 @@ var faceboxTemplate	= function() {
 			return text;
 		},
 		renderFile	: function( filePath, options, callback ) {
-			var code	= _fs.readFileSync( filePath, { encoding : "utf-8" });
+			var code	= readFileSync( filePath );
 			var env		= {
 				error	: [],
 				vars	: envVars,

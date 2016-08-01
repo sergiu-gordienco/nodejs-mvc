@@ -40,6 +40,7 @@ module.exports	= {
 	".asf"	: "video/x-ms-asf",
 	".asm"	: "text/x-asm",
 	".asp"	: "text/asp",
+	".svg"	: "image/svg+xml",
 	".asx"	: "application/x-mplayer2",
 	// ".asx"	: "video/x-ms-asf",
 	// ".asx"	: "video/x-ms-asf-plugin",

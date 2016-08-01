@@ -1,6 +1,6 @@
 {
   "name": "nodejs-mvc",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "ApplicationBuilder Prototype - Event Based",
   "main": "index.js",
   "scripts": {
@@ -37,12 +37,17 @@
     "url": "https://github.com/sergiu-gordienco/nodejs-mvc/issues"
   },
   "homepage": "https://github.com/sergiu-gordienco/nodejs-mvc",
-  "dependencies"	: {
-    "module-require"	: ">=1.4.2",
-    "cookies"         : "0.1.2",
-    "express-session"	: "1.11.3",
-    "connect-multiparty"	: "1.2.5",
-    "jade"    : "1.9.2",
-    "connect"	: "3.3.5"
+  "dependencies": {
+    "module-require": ">=1.4.2",
+    "cookies": "0.6.1",
+    "express-session": "1.11.3",
+    "connect-multiparty": "1.2.5",
+    "jade": "1.9.2",
+    "connect": "3.3.5",
+    "keygrip"   : "~1.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.4.5",
+    "socket.io": "^1.4.6"
   }
 }
