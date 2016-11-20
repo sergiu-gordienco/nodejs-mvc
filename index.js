@@ -12,6 +12,7 @@ var appBuilder	= function () {
 		http	: require('http'),
 		url		: require('url'),
 		os		: require('os'),
+		httpStatuses : http_statuses,
 		merge	: function(a, b) {
 			if (a && b) {
 				for (var key in b) {
@@ -819,7 +820,7 @@ var _config	= {
 				// find controller and run action
 				controller	= request.app().getController(request.controller);
 			}
-			appInstance.console.warn(request.method , request.app().getModulePath(), controller, request.controllerAction, request.url);
+			// appInstance.console.warn(request.method , request.app().getModulePath(), controller, request.controllerAction, request.url);
 			if( controller !== false ) {
 				var action	= controller.getAction( request.controllerAction );
 				if( action !== false && action.isPublic() ) {
@@ -984,8 +985,10 @@ var _appInstanceVars	= {};
 var appInstance			= {
 	console		: consoleInstance,
 	debug		: function( state ) {
-		if( typeof( state ) != "undefined" )
+		if( typeof( state ) != "undefined" ) {
 			_config.debug	= !!state;
+			viewerInstance.debugMode(_config.debug);
+		}
 		return _config.debug;
 	},
 	_functions	: {},
@@ -1246,6 +1249,7 @@ appInstance.getRootPath						= moduleObject.getRootPath;
 appInstance.getLibPath						= moduleObject.getLibPath;
 appInstance.getVendorPath					= moduleObject.getVendorPath;
 appInstance.viewer							= viewerInstance;
+moduleObject.viewer							= viewerInstance;
 appInstance.templateManger					= new templateMangerInstance( appInstance.viewer );
 moduleObject.handleServerResponse			= _config.handleServerResponse;
 moduleObject.handleServerMidleware			= _config.handleServerMidleware;
@@ -1260,7 +1264,8 @@ moduleObject.maxPostSize					= appInstance.maxPostSize;
 moduleObject.onMaxPostSize					= appInstance.onMaxPostSize;
 moduleObject.sessionManager					= new sessionInstance(true);
 moduleObject._events						= appInstance._events;
-
+moduleObject.httpStatuses				= http_statuses;
+moduleObject.Email				= appInstance._classes.emailInstance.Email;
 
 moduleObject.locals						= appInstance.getVars;
 // TODO express app.mountpath

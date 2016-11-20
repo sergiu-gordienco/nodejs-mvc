@@ -104,14 +104,14 @@ module.exports	= function( req, res, app, options ) {
 		sessionId	: function() {
 			var ssid	= false;
 			ssid	= _config.ssid || req.cookie(_config.cookieName) || req.cookie(_config.cookieName, { secure: true }) /*|| req.getVars().ssid*/ || "";
-			console.log(
-				"sessionId:: ",
-				ssid,
-				"\n",
-				req.cookies.get(_config.cookieName, { secure: true }),
-				"\n",
-				req.cookies.get(_config.cookieName)
-			);
+			// console.log(
+			// 	"sessionId:: ",
+			// 	ssid,
+			// 	"\n",
+			// 	req.cookies.get(_config.cookieName, { secure: true }),
+			// 	"\n",
+			// 	req.cookies.get(_config.cookieName)
+			// );
 			if( !ssid ) {
 				ssid	= _functions.hashSession(_functions.genSessionId());
 				_config.ssid	= ssid;

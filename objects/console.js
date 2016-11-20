@@ -1,3 +1,23 @@
+var promptCallbacks = [];
+
+process.stdin.on('readable', function () {
+	var chunk = process.stdin.read();
+	if (chunk !== null) {
+		if (promptCallbacks.length) {
+			promptCallbacks.forEach(function (cb) {
+				var er;
+				try {
+					cb(chunk);
+				} catch (er) {
+					console.log(er);
+				}
+			});
+			promptCallbacks = [];
+		}
+	}
+});
+
+
 var path = require("path");
 var stackList	= function () {
 	var stackReg	= /at\s+(.*)\s+\((.*):(\d*):(\d*)\)/i;
@@ -63,7 +83,7 @@ var consoleBuilder = function () {
 		info	: function() {
 			if (methods.isDebugMode()) {
 				var args = Array.prototype.slice.call(arguments);
-				args.unshift("\033[0;47;30m ");
+				args.unshift("\033[0;36m ");
 				pushHeader(args, "info");
 				args.push("\033[0m");
 				console_original.log.apply(console, args);
@@ -90,6 +110,11 @@ var consoleBuilder = function () {
 			console_original.error.apply(console, args);
 			console_original.log(getStackTrace());
 			console_original.log("\033[0m\n");
+		},
+		prompt	: function (cb, message) {
+			if (typeof(message) !== "undefined")
+				process.stdout.write(message);
+			promptCallbacks.push(cb);
 		}
 	};
 	if (!global.console_original) {

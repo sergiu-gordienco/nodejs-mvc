@@ -492,6 +492,124 @@ it is very optimized, and practically, doesn't store additional metadata.
     `request` _is optional ( used for `Content-Range` header)_
 
 
+## Templates Env references
+
+```js
+var app = require("nodejs-mvc")();
+
+app.templateEnv({
+	author: "sergiu-gordienco"
+});
+
+// in templates will be available a reference env with data { author: "sergiu-gordienco" }
+```
+
+## application viewer - Viewer Object
+
+Small overview
+
+```js
+	debugMode	: function (status) {
+		// updates or just return current debug status
+	},
+	getEnvVars	: function() {
+		// return envVars;
+	},
+	updateEnvVars	: function( data ) {
+		// updates env vars
+	},
+	renderCode	: function (code, vars, virtualFilePath, cb) {
+		// code - the code to e rendered
+		// vars - this reference will be available in template as "vars"
+		// virtualFilePath - reference path that will be used for searching included files
+		// cb - callback for getting results
+			// arguments:
+				// error - ( Array of errors ) or ( undefined )
+				// html - String code
+	}
+```
+
+## Email Object
+
+## Examples
+```js
+	var app = require("nodejs-mvc");
+	var Email = app.Email
+	var myMsg = new Email(
+	{ from: "me@example.com"
+		, to:   "you@example.com"
+		, subject: "Knock knock..."
+		, body: "Who's there?"
+	});
+
+	// if callback is provided, errors will be passed into it
+	// else errors will be thrown
+	myMsg.send(function(err){ ... })
+```
+
+Note that no callback was passed into `send()`, therefore errors will throw.
+
+## Options
+
+```js
+	new Email(config)
+```
+
+config options:
+
+- to {array|string}
+  - Email address(es) to which this msg will be sent
+- from {string}
+  - Email address from which this msg is sent. If not set
+    defaults to the `exports.from` global setting.
+- replyTo {string}
+  - Email address to which replies will be sent. If not set
+    defaults to `from`
+- cc {array|string}
+  - Email address(es) who receive a copy
+- bcc {array|string}
+  - Email address(es) who receive a blind copy
+- subject {string}
+  - The subject of the email
+- body {string}
+  - The message of the email
+- bodyType {string}
+  - Content type of body. Only valid option is 'html' (for now).
+    Defaults to text/plain.
+- altText {string}
+  - If `bodyType` is set to 'html', this will be sent as the text
+    alternative.
+- timeout {number}
+  - Duration in milliseconds to wait before killing the process.
+    If not set, defaults to `exports.timeout` global setting.
+- path {string}
+  - Optional path to the sendmail executable
+
+
+## TODO documentation for following objects
+
+app.debug
+app.console
+app.templateManger
+app.getVars
+app.maxPostSize
+app.onMaxPostSize
+app.sessionManager
+app.\_events // .onError
+app.httpStatuses
+
+appInstance.\_functions.isValidIdentifier
+appInstance.structure
+appInstance.sessionExpire
+appInstance.templateEnv
+appInstance.sessionAutoUpdate
+appInstance.getPublicPath
+appInstance.getRootPath
+appInstance.getLibPath
+appInstance.getVendorPath
+appInstance.viewer
+
+
 ## Templates FaceboxTPL
 
 ### To view parameters that are send have following structure
@@ -576,7 +694,7 @@ On template Rendering we have following variables
 	<body>
 		{eval}
 			vars.item_index	= 0;
-		{eval}
+		{/eval}
 		<ul>
 			<li>item {{ ++vars.item_index }}</li>
 			<li>item {{ ++vars.item_index }}</li>
@@ -588,7 +706,7 @@ On template Rendering we have following variables
 			var message	= 'Were inserted '+vars.item_index+' items';
 			// returning response that will be inserted
 			return message;
-		{js-return}
+		{/js-return}
 	</body>
 	</html>
 ```

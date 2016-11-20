@@ -37,6 +37,12 @@ var faceboxTemplate	= function() {
 	var includeLevel	= 10;
 	var envVars			= {};
 	var publicObject	= {
+		debugMode	: function ( status ) {
+			if (typeof(status) === "boolean") {
+				debugMode = status;
+			}
+			return debugMode;
+		},
 		setIncludeLevel	: function( level ) {
 			if( typeof(level) === "number" )
 				includeLevel	= level;
@@ -66,10 +72,14 @@ var faceboxTemplate	= function() {
 						var f	= new Function("var env	= arguments[1];var vars = arguments[0];\n return "+addr);
 						path = f(vars,env);
 					} catch(err) {
-						throw {
+						console.error(Error({
 							message	: "Unable to eval path:\n"+addr,
 							error	: err
-						}
+						}));
+						throw Error({
+							message	: "Unable to eval path:\n"+addr,
+							error	: err
+						});
 					}
 				}
 				// console.log('Include Template: ', addr, path);
@@ -82,6 +92,7 @@ var faceboxTemplate	= function() {
 					return x;
 				});
 			} catch(err) {
+				console.error(err);
 				env.error.push(err);
 			}
 			try {
@@ -134,6 +145,7 @@ var faceboxTemplate	= function() {
 						try {
 							text	= text.split(replacers[i].id).join((new Function("var vars = arguments[0];var env = arguments[1];\n"+replacers[i].code ))( vars, env ));
 						} catch(err) {
+							err.message = JSON.stringify(replacers[i], null, "  ") + err.message;
 							env.error.push(err);
 						}
 				break;
@@ -141,6 +153,7 @@ var faceboxTemplate	= function() {
 						try {
 							(new Function("var vars = arguments[0];var env = arguments[1];\n"+replacers[i].code ))( vars, env );
 						} catch(err) {
+							err.message = JSON.stringify(replacers[i], null, "  ") + err.message;
 							env.error.push(err);
 						}
 						text = text.split(replacers[i].id).join('');
@@ -162,7 +175,13 @@ var faceboxTemplate	= function() {
 				break;
 				}
 			} catch(err) {
+				err.message = JSON.stringify(replacers[i], null, "  ") + err.message;
 				env.error.push(err);
+			}
+			if (env.error.length) {
+				env.error.forEach(function (err) {
+					console.error(err);
+				});
 			}
 			return text;
 		},
@@ -173,6 +192,18 @@ var faceboxTemplate	= function() {
 				vars	: envVars,
 				path	: filePath,
 				dirname	: (filePath.replace(/[^\/]+$/,'')+'/').replace(/^\/+$/,'/'),
+				render	: publicObject.render,
+				renderFile	: publicObject.renderFile
+			};
+			var html	= publicObject.render( code, options, env );
+			(callback)( env.error.length ? env.error : undefined, html );
+		},
+		renderCode	: function( code, options, virtualFilePath, callback ) {
+			var env		= {
+				error	: [],
+				vars	: envVars,
+				path	: virtualFilePath,
+				dirname	: (virtualFilePath.replace(/[^\/]+$/,'')+'/').replace(/^\/+$/,'/'),
 				render	: publicObject.render,
 				renderFile	: publicObject.renderFile
 			};

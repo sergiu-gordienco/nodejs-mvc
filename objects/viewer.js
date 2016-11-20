@@ -17,6 +17,9 @@ var buildViewer	= function () {
 	};
 
 	var moduleObject	= {
+		debugMode	: function (status) {
+			return facebox.debugMode(status);
+		},
 		getEnvVars	: function() {
 			return _configObject.envVars;
 		},
@@ -24,6 +27,9 @@ var buildViewer	= function () {
 			var i;
 			for( i in data )
 				_configObject.envVars[i]	= data[i];
+		},
+		renderCode	: function (code, vars, virtualFilePath, cb) {
+			return _classes.facebox.renderCode(code, vars, virtualFilePath, cb);
 		},
 		render	: function( response, view, options ) {
 			// { name, path, code }
