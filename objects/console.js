@@ -4,7 +4,9 @@ process.stdin.on('readable', function () {
 	var chunk = process.stdin.read();
 	if (chunk !== null) {
 		if (promptCallbacks.length) {
-			promptCallbacks.forEach(function (cb) {
+			var cbs = promptCallbacks;
+			promptCallbacks = [];
+			cbs.forEach(function (cb) {
 				var er;
 				try {
 					cb(chunk);
@@ -12,7 +14,6 @@ process.stdin.on('readable', function () {
 					console.log(er);
 				}
 			});
-			promptCallbacks = [];
 		}
 	}
 });
@@ -134,6 +135,7 @@ var consoleBuilder = function () {
 		global.console.info	= methods.info;
 		global.console.warn	= methods.warn;
 		global.console.error	= methods.error;
+		global.console.prompt	= methods.prompt;
 	}
 	return methods;
 };

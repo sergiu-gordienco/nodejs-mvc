@@ -1267,6 +1267,25 @@ but javascript is working with **Unicode**
 	Buffer.prototype.indexOfSect	= function(searchSequence, fromIndex) { /*...*/ },
 ```
 
+## Console object was Extended
+
+was added method **prompt**:
+
+**Example:**
+
+```js
+console.prompt("rerun tests? [y/n]: ", function (err, buffer) {
+	var response = buffer.toString().replace(/^\s*(.*?)\s*$/, '$1');
+	if (response === 'y') {
+		// TODO what you want...
+	}
+});
+
+```
+
+console output now is much better formated ( for teminal vt100 )
+
+
 ## Authors
 
  - Gordienco Sergiu
