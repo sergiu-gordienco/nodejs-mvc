@@ -175,7 +175,9 @@ var faceboxUpdateProto	= function( root ) {
 			fromHex : function(){var s=this;if(s.length % 2)s='0'+s;var e;try{return unescape(s.replace(/([0-9A-Fa-f]{2})/gi,'%$1'));}catch(e){return '';}},
 			toHtmlSimple	: function() { return this.replace(/\&/g, "&amp;").replace(/\</g, "&lt;").replace(/\>/g, "&gt;").replace(/\"/g, "&quot;").replace(/\'/g, "&#039;"); },
 			toHtml : function(){return escape(this).replace(/\%u([0-9a-f]{4})/gi,'&#x$1;').replace(/\%([0-9a-f]{2})/gi,'&#x$1;').replace(/\&\#x20\;/gi,' ');},
-			fromHtml : function(){var e = document.createElement('div');e.innerHTML = '<textarea>'+this.replace(/\</g,'&lt;').replace(/\>/g,'&gt;')+'</textarea>';return e.getElementsByTagName('textarea')[0].value;},
+			fromHtml : function(){
+				return this.toHtmlSimple();
+			},
 			cleanTags	: function() {
 				return this.replace(/\<\!\-\-[\s\S]*?\-\-\>/g,' ').replace(/\<(script|iframe|style|object|noscript|frame|frameset)[^\>]*?\>[\s\S]*?\<\/\1.*?\>/gi,'').replace(/\<[^\>]*\>/g,' ').replace(/\s{2,}/g,' ').fromHtml()
 							},
@@ -570,7 +572,7 @@ var faceboxUpdateProto	= function( root ) {
 			// console.log("/\\%("+p.join('|')+")/");
 		m_store.json_string_m	= ("/\\%("+p.join('|')+")/").toRegexp("gi");
 	})());
-	
+
 	( function () {
 		var i;
 		var methods	= {

@@ -584,6 +584,8 @@ config options:
     If not set, defaults to `exports.timeout` global setting.
 - path {string}
   - Optional path to the sendmail executable
+- debug {boolean}
+  - Print debug info
 
 
 ## TODO documentation for following objects

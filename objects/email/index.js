@@ -62,7 +62,6 @@ function genBoundry () {
 
 function Email (config) {
   config = config || {};
-
   ; ['to'
     ,'from'
     ,'cc'
@@ -72,6 +71,7 @@ function Email (config) {
     ,'body'
     ,'bodyType'
     ,'altText'
+		,'debug'
     ,'timeout' ].forEach(function (key) {
     this[key] = config[key];
   }, this);
@@ -84,7 +84,10 @@ Email.prototype = {
 
   send: function (callback) {
     if (!this.valid(callback)) return;
-    var sendmail = spawn(this.path, ['-i', '-t'], this.options);
+		var args = ['-i', '-t'];
+		if (this.debug)
+			args.push('-v');
+    var sendmail = spawn(this.path, args, this.options);
     sendmail.on('exit', function(code) {
       var err = null;
       if (code !== 0) {
@@ -95,6 +98,23 @@ Email.prototype = {
         callback(err);
       }
     });
+		if (this.debug) {
+			if (sendmail.stdout) {
+				sendmail.stdout.on('data', function (chunk) {
+					process.stdout.write('\033[0mmail:: >> \033[36m' + chunk.toString() + '\033[0m');
+				});
+			}
+			if (sendmail.stdin) {
+				sendmail.stdin.on('data', function (chunk) {
+					process.stdout.write('\033[0mmail:: << \033[36m' + chunk.toString() + '\033[0m');
+				});
+			}
+			if (sendmail.stderr) {
+				sendmail.stderr.on('data', function (chunk) {
+					process.stdout.write('\033[0mmail:: ?> \033[36m' + chunk.toString() + '\033[0m');
+				});
+			}
+		}
 
     sendmail.stdin.end(this.msg);
   }
