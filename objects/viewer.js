@@ -27,6 +27,7 @@ var buildViewer	= function () {
 			var i;
 			for( i in data )
 				_configObject.envVars[i]	= data[i];
+			_classes.facebox.updateEnvVars(_configObject.envVars);
 		},
 		renderCode	: function (code, vars, virtualFilePath, cb) {
 			return _classes.facebox.renderCode(code, vars, virtualFilePath, cb);
@@ -40,7 +41,7 @@ var buildViewer	= function () {
 			};
 			var err;
 			if( view.path.match(/\.(tpl|fbx-tpl)$/) ) {
-				_classes.facebox.updateEnvVars(_configObject.envVars);
+				// _classes.facebox.updateEnvVars(_configObject.envVars);
 				// _classes.facebox.updateEnvVars({ response: response });
 				_classes.facebox.renderFile( view.path, options, function( err, html ) {
 					if (err) {
@@ -63,7 +64,7 @@ var buildViewer	= function () {
 					}
 				});
 			} else if( view.path.match(/\.(jade)$/) ) {
-				_classes.facebox.updateEnvVars(_configObject.envVars);
+				// _classes.facebox.updateEnvVars(_configObject.envVars);
 				// _classes.facebox.updateEnvVars({ response: response });
 				// console.log({
 				// 	env		: _classes.facebox.getEnvVars(),
