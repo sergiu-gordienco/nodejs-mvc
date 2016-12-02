@@ -18,7 +18,7 @@ var buildViewer	= function () {
 
 	var moduleObject	= {
 		debugMode	: function (status) {
-			return facebox.debugMode(status);
+			return _classes.facebox.debugMode(status);
 		},
 		getEnvVars	: function() {
 			return _configObject.envVars;
