@@ -1,6 +1,6 @@
 {
   "name": "nodejs-mvc",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "ApplicationBuilder Prototype - Event Based",
   "main": "index.js",
   "scripts": {

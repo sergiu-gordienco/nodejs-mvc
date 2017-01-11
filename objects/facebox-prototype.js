@@ -212,7 +212,7 @@ var faceboxUpdateProto	= function( root ) {
 			escape		: function() { return escape(this); },
 			encodeURI	: function() { return encodeURIComponent(this); },
 			unescape	: function() { return unescape(this); },
-			decodeURI	: function() { return decodeURIComponent(this); },
+			decodeURI	: function() { var er; try {return decodeURIComponent(this); } catch (er) {}; return unescape(this); },
 			parseUrlVars	: function(json,params) {
 				if(!params) params = {
 					keepOBJ	: false,
