@@ -85,15 +85,23 @@ var extendResponseRequest	= function (res, req) {
 	};
 	request.postData	= new Buffer(0);
 	request.postVars	= function() {
+		var data;
 		if( !( "post_vars" in request.urlObject ) ) {
 			if( (request.headers['content-type'] || '').indexOf('multipart/form-data') === 0 && ( request.method == 'POST' || request.method == 'PUT' ) ) {
 				var hex		= request.postData.toString('hex', 0, request.postData.length);
-				var data	= hex.fromHex().parseMultipartFormData(true,false,true,hex);
+				data	= hex.fromHex().parseMultipartFormData(true,false,true,hex);
 				request.urlObject.post_vars	= data._post;
 				// urlObj.post_vars.data	= request.postData.toString('hex', 0, request.postData.length);
 				request.urlObject.file_vars	= data._files;
 			} else {
-				request.urlObject.post_vars	= request.postData.toString('utf-8', 0, request.postData.length).parseUrlVars(true);
+				data = request.postData.toString('utf-8', 0, request.postData.length);
+				var er;
+				try {
+					data = data.decodeURI();
+				} catch (er) {
+					data = data.unescape();
+				}
+				request.urlObject.post_vars	= data.parseUrlVars(true);
 				request.urlObject.file_vars	= {};
 			}
 		}
