@@ -142,7 +142,7 @@ var faceboxUpdateProto	= function( root ) {
 				return ""+k+"="+encodeURIComponent(o);
 			}
 		return r.join('&');
-	}
+	};
 
 
 
