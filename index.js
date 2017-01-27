@@ -95,12 +95,12 @@ var extendResponseRequest	= function (res, req) {
 				request.urlObject.file_vars	= data._files;
 			} else {
 				data = request.postData.toString('utf-8', 0, request.postData.length);
-				var er;
-				try {
-					data = data.decodeURI();
-				} catch (er) {
-					data = data.unescape();
-				}
+				// var er;
+				// try {
+				// 	data = data.decodeURI();
+				// } catch (er) {
+				// 	data = data.unescape();
+				// }
 				request.urlObject.post_vars	= data.parseUrlVars(true);
 				request.urlObject.file_vars	= {};
 			}
