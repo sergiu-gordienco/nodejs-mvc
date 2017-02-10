@@ -177,7 +177,7 @@ module.exports	= function( req, res, app, options ) {
 			return false;
 		}
 	};
-	var _privateFunctions	= [ 'getSession' ];
+	var _privateFunctions	= [ /* 'getSession' */ ];
 	var publicObject	= {};
 	var i;
 	for( i in _functions )
