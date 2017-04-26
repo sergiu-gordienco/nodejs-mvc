@@ -1,5 +1,8 @@
 /* jshint -W014 */
 /* jshint -W002 */
+/* jshint -W027 */
+/* jshint -W083 */
+/* jshint -W084 */
 
 var http_statuses   = require(__dirname + "/objects/http_statuses.js");
 
@@ -426,7 +429,7 @@ var extendResponseRequest	= function (res, req) {
 	};
 
 	res.staticResource	= function (filePath, fileName, callback, req) {
-		var err;
+		var er, err;
 		try {
 			_classes.fs.stat(filePath, function (err, stat) {
 				if (err) {
@@ -479,7 +482,9 @@ var extendResponseRequest	= function (res, req) {
 					}
 				}
 			});
-		} catch (err) {}
+		} catch (er) {
+			err = er;
+		}
 		if (err) {
 			try {
 				appInstance._events.onError(err, { res: res, status : 500, end : true });
@@ -632,7 +637,7 @@ var _config	= {
 				if (stat.isDirectory()) {
 					response.staticResource(fpath + "/index.html", undefined, callback, request);
 				} else {
-					response.setHeader('onRequestCaptureContent-Type', 'text/html');
+					// response.setHeader('Content-Type', 'text/html');
 					response.staticResource(fpath, undefined, callback, request);
 				}
 			}

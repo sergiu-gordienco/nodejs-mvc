@@ -51,21 +51,28 @@ var stackList	= function () {
 var consoleBuilder = function () {
 	var console	= global.console_original || global.console;
 	var _config		= {
-		debug	: true
+		debug	: true,
+		format: "\033[7m {{timestamp}} [{{TYPE}}] <{{title}}> {{file}}:{{line}} ({{method}})\t\n{{stack}}\n\033[7m"
 	};
 	var pushHeader = function (args, type, stack) {
 		var data = stackList();
-		var format = "\033[7m {{timestamp}} [{{TYPE}}] <{{title}}> {{file}}:{{line}} ({{method}})\t" + (stack ? "\n{{stack}}\n" : "")+"\033[7m";
+		var format = _config.format;
 		format = format.replace('{{timestamp}}', new Date().toISOString());
 		format = format.replace('{{TYPE}}', type.toUpperCase());
 		format = format.replace('{{file}}', data.file);
 		format = format.replace('{{line}}', data.line);
 		format = format.replace('{{method}}', data.method);
 		format = format.replace('{{title}}', data.path);
-		format = format.replace('{{stack}}', data.stack);
+		format = format.replace('{{stack}}', stack ? "\n"+data.stack+"\n" : "");
 		args.unshift(format);
 	};
 	var methods	= {
+		format : function (data) {
+			if (typeof(data) === "string") {
+				_config.format = data;
+			}
+			return _config.format;
+		},
 		isDebugMode	: function (b) {
 			if (typeof(b) !== "undefined") {
 				_config.debug	= !!b;
@@ -131,6 +138,7 @@ var consoleBuilder = function () {
 			assert: console.assert,
 			Console: console.Console
 		};
+		global.consoleManager = methods;
 		global.console.log	= methods.log;
 		global.console.info	= methods.info;
 		global.console.warn	= methods.warn;
