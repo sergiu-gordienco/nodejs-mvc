@@ -52,7 +52,7 @@ var consoleBuilder = function () {
 	var console	= global.console_original || global.console;
 	var _config		= {
 		debug	: true,
-		format: "\033[7m {{timestamp}} [{{TYPE}}] <{{title}}> {{file}}:{{line}} ({{method}})\t\n{{stack}}\n\033[7m"
+		format: "\033[7m {{timestamp}} [{{TYPE}}] <{{title}}> {{file}}:{{line}} ({{method}}){{stack}}\033[7m"
 	};
 	var pushHeader = function (args, type, stack) {
 		var data = stackList();
