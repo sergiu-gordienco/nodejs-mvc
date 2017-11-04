@@ -988,7 +988,7 @@ viewerInstance.updateEnvVars({
 
 var bootstrapInstance	= require(_config.cwd+'bootstrap.js');
 var sessionInstance		= require(_config.getLibPath()+'session.js');
-var templateMangerInstance	= require(_config.getLibPath()+"template-manager.js");
+var templateManagerInstance	= require(_config.getLibPath()+"template-manager.js");
 var consoleInstance		= require(_config.getLibPath()+'console.js')();
 consoleInstance.isDebugMode	= function () {
 	return _config.debug;
@@ -1263,14 +1263,14 @@ appInstance.getLibPath						= moduleObject.getLibPath;
 appInstance.getVendorPath					= moduleObject.getVendorPath;
 appInstance.viewer							= viewerInstance;
 moduleObject.viewer							= viewerInstance;
-appInstance.templateManger					= new templateMangerInstance( appInstance.viewer );
+appInstance.templateManager					= new templateManagerInstance( appInstance.viewer );
 moduleObject.handleServerResponse			= _config.handleServerResponse;
 moduleObject.handleServerMidleware			= _config.handleServerMidleware;
 moduleObject.handleStaticResponse			= _config.handleStaticResponse;
 moduleObject.handleServerResponseLogic		= _config.handleServerResponseLogic;
 moduleObject.debug							= appInstance.debug;
 moduleObject.console						= appInstance.console;
-moduleObject.templateManger					= appInstance.templateManger;
+moduleObject.templateManager					= appInstance.templateManager;
 moduleObject.getVars						= appInstance.getVars;
 moduleObject.onRequestCapture				= appInstance.onRequestCapture;
 moduleObject.maxPostSize					= appInstance.maxPostSize;

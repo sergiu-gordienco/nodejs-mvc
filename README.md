@@ -592,7 +592,7 @@ config options:
 
 app.debug
 app.console
-app.templateManger
+app.templateManager
 app.getVars
 app.maxPostSize
 app.onMaxPostSize
