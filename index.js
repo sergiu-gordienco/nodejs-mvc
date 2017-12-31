@@ -754,12 +754,25 @@ var _config	= {
 		var postDataCallbacks	= [];
 		var postDataStatus	= 'pending';
 		var postDataColect	= function (request, callback, maxPostSize) {
+			var cb;
 			if (postDataStatus == 'progress') {
-				postDataCallbacks.push(callback);
+				var cbExecuted = false;
+				cb = function (err) {
+					if (cbExecuted) return;
+					cbExecuted = true;
+					callback(err);
+				};
+				postDataCallbacks.push(cb);
 				return;
 			} else if (postDataStatus == 'pending') {
 				postDataStatus	= 'progress';
-				postDataCallbacks.push(callback);
+				var cbExecuted = false;
+				cb = function (err) {
+					if (cbExecuted) return;
+					cbExecuted = true;
+					callback(err);
+				};
+				postDataCallbacks.push(cb);
 			} else if (postDataStatus == 'done') {
 				callback();
 				return;
@@ -770,7 +783,11 @@ var _config	= {
 			if (typeof(maxPostSize) !== "number") {
 				maxPostSize	= root.maxPostSize;
 			}
+			var stopRecieving = false;
 			request.on("data", function(chunk) {
+				if (stopRecieving) {
+					return;
+				}
 				// request.postData += chunk;
 				// console.log(maxPostSize, " :: ", chunk);
 				// if(request.postDataState) {
@@ -778,11 +795,29 @@ var _config	= {
 						request.postData	= Buffer.concat([request.postData, chunk]);
 					} else {
 						// request.postDataState	= false;
-						if(!root.onMaxPostSize( request, response, appInstance, maxPostSize )) {
+						var maxPostSizeresponse = root.onMaxPostSize( request, response, appInstance, maxPostSize );
+						if(!maxPostSizeresponse) {
 							var e;
 							try {
-								request.abort();
-							} catch(e) {}
+								var e = Error(maxPostSize + ' bytes ; Max post size excedeed');
+								if (maxPostSizeresponse === false) {
+									stopRecieving = true;
+									response.end();
+									if (request.destroy) request.destroy(e);
+								} else {
+									stopRecieving = true;
+									postDataCallbacks = [];
+									if (request.destroy) request.destroy(e);
+								}
+								postDataCallbacks.forEach(function (cb) {
+									cb(e);
+								});
+							} catch(e) {
+								console.error(e);
+								postDataCallbacks.forEach(function (cb) {
+									cb(e);
+								});
+							}
 							return false;
 						}
 					}
@@ -797,7 +832,7 @@ var _config	= {
 					delete request.urlObject.post_vars;
 				}
 				postDataCallbacks.forEach(function (cb) {
-					cb();
+					cb(err);
 				});
 				appInstance.console.error(err);
 				var er;
