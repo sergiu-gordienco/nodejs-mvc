@@ -551,6 +551,7 @@ var _config	= {
 	httpListners	: {
 		"use"	: [],
 		"preuse"	: [],
+		"prepost": [],
 		"post"	: [],
 		"get"	: [],
 		"head"	: [],
@@ -907,13 +908,15 @@ var _config	= {
 				mvcRun();
 			});
 		} else if (request.method === "POST") {
-			root.runHttpListners("post", request, response, function () {
-				mvcRun();
-			}, function (cb) {
-				// console.log("POST Data ::Start");
-				postDataColect(request, function (err) {
-					// console.log("POST Data ::callback");
-					cb();
+			root.runHttpListners("prepost", request, response, function () {
+				root.runHttpListners("post", request, response, function () {
+					mvcRun();
+				}, function (cb) {
+					// console.log("POST Data ::Start");
+					postDataColect(request, function (err) {
+						// console.log("POST Data ::callback");
+						cb();
+					});
 				});
 			});
 		} else {
@@ -1077,7 +1080,7 @@ var appInstance			= {
 		if (typeof(callback) === "function") {
 			var i;
 			for( i in _config.httpListners ) {
-				if (i !== "use" && i !== "preuse") {
+				if (i !== "use" && i !== "preuse" && i !== "prepost") {
 					_config.httpListners[i].push({
 						route	: route,
 						callback	: callback
