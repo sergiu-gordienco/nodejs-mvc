@@ -3,7 +3,12 @@ module.exports	= function( actionName, controller, options, appInstance ) {
 		"public"	: false,
 		"postData"	: false,
 		"maxPostSize"	: 1024*1024, // 1Mb
-		"autoClose"	: false,	// action will close itself with response.end();
+		get autoClose() {
+			console.warn("action.autoClose is deprecated");
+		},
+		set autoClose(params) {
+			console.warn("action.autoClose is deprecated");
+		},
 		"capture"	: function( request, response, appInstance, controller, action ) {
 
 		}
@@ -12,15 +17,16 @@ module.exports	= function( actionName, controller, options, appInstance ) {
 		if( "public" in options ) {
 			_config.public	= !!options.public;
 		}
-		
+
 		if( "postData" in options ) {
 			_config.postData	= !!options.postData;
 		}
-		
+
 		if( "maxPostSize" in options ) {
 			_config.maxPostSize	= options.maxPostSize;
 		}
-		
+
+		// TODO DEPRECATED
 		if( "autoClose" in options ) {
 			_config.autoClose	= !!options.autoClose;
 		}
@@ -51,15 +57,20 @@ module.exports	= function( actionName, controller, options, appInstance ) {
 			}
 			return _config.maxPostSize;
 		},
+		// TODO DEPRECATED
 		autoClose	: function() {
 			return !!(_config.autoClose);
 		},
 		run			: function( request, response ) {
-			var e = true;
+			var e = true, err;
 			try {
 				(_config.capture)( request, response, appInstance, controller, actionObject );
-			} catch(e) {
-				appInstance._events.onError(e);
+			} catch(err) {
+				if (appInstance.debug()) {
+					console.error(err);
+				}
+				appInstance._events.onError(err);
+				e = err;
 			}
 			return e;
 		}

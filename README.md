@@ -250,7 +250,6 @@ File structure of an controller and actions:
 								// POST data will be returned by request.postVars()
 								// FILES will be returned by request.fileVars()
 		"maxPostSize"	: 1024*1024, // default 1Mb
-		"autoClose"	: false,	// action will close itself with response.end();
 								// may be set true if action is sync without callbacks
 		capture	: function( request, response, app, controller, action ) {
 			// redner the view index
@@ -294,7 +293,6 @@ File structure of an controller and actions:
  * `action.isPublic()`	- returns `true` if `public` is `true` else `false`
  * `action.usePostData()`	- returns `true` if `postData` is `true` else `false`
  * `action.maxPostSize(numberBytes)` - if `numberBytes` is a number it updates `maxPostSize` parameter, even function returns current maxPostSize
- * `action.autoClose()` - returns true if action has autoClose enabled otherwise returns false
  * `action.run( request, response )` - run a action and returns `true` on success else returns `Error` object
 
 

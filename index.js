@@ -875,16 +875,9 @@ var _config	= {
 				if( action !== false && action.isPublic() ) {
 					if( !action.usePostData() ) {
 						action.run( request, response );
-						// console.log(action);
-						if( !action.autoClose() )
-							response.end();
 					} else {
 						postDataColect(request, function (err) {
-							// if( request.postDataState ) {
-								action.run( request, response );
-							// }
-							if( !action.autoClose() )
-								response.end();
+							action.run( request, response );
 						}, action.maxPostSize());
 					}
 				} else {
