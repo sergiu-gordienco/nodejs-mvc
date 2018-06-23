@@ -522,12 +522,18 @@ var extendResponseRequest	= function (res, req) {
 		}
 	};
 	res.sendStatus	= function (code) {
-		res.status(code).send(http_statuses[code] || (code + ''));
+		res.statusCode = code;
+		res.write(http_statuses[code] || (code + ''));
+		res.end();
 		return res;
 	};
 	res.sendFile	= function (path, options, callback) {
 		// TODO right res.sendFile()
-		res.staticResource(path, undefined, callback, undefined);
+		if (res.finished) {
+			callback(Error("Response is finished"));
+		} else {
+			res.staticResource(path, undefined, callback, undefined);
+		}
 		return res;
 	};
 	res.locals	= res.app.locals;
