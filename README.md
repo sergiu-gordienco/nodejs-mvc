@@ -695,6 +695,9 @@ On template Rendering we have following variables
 		{eval}
 			vars.item_index	= 0;
 		{/eval}
+		<script type="text/facebox-template">
+			vars.item_index	= 1;
+		</script>
 		<ul>
 			<li>item {{ ++vars.item_index }}</li>
 			<li>item {{ ++vars.item_index }}</li>
@@ -707,6 +710,11 @@ On template Rendering we have following variables
 			// returning response that will be inserted
 			return message;
 		{/js-return}
+		<script type="text/facebox-template">
+			var message	= 'Were inserted '+vars.item_index+' items';
+			// returning response that will be inserted
+			return message;
+		</script>
 	</body>
 	</html>
 ```

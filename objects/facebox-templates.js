@@ -117,6 +117,17 @@ var faceboxTemplate	= function() {
 			} catch(err) {
 				env.error.push(err);
 			}
+
+			try {
+				text = text.replace(/\<script[^\>]+?type\s*?=\s*?\"text\/facebox\-template\"[^\>]*?\>([\s\S]*?)\<\/script\>/g,function (match, p1, p2, offset, string) {
+					var x	= '[[replacer-'+Math.floor(Math.random()*10000000)+'-'+Math.floor(Math.random()*10000000)+'-'+new Date().valueOf()+']]';
+					replacers.push({ id : x, type : 'js-return', code : p1 });
+					return x;
+				});
+			} catch(err) {
+				env.error.push(err);
+			}
+
 			try {
 				text = text.replace(/\{(code|js\-return|eval|js\-script|css\-style)\}([\s\S]*?)\{\/\1\}/g,function (match, p1, p2, offset, string) {
 					var x	= '[[replacer-'+Math.floor(Math.random()*10000000)+'-'+Math.floor(Math.random()*10000000)+'-'+new Date().valueOf()+']]';
@@ -143,7 +154,7 @@ var faceboxTemplate	= function() {
 				break;
 					case 'js-return':
 						try {
-							text	= text.split(replacers[i].id).join((new Function("var vars = arguments[0];var env = arguments[1];\n"+replacers[i].code ))( vars, env ));
+							text	= text.split(replacers[i].id).join((new Function("var vars = arguments[0];var env = arguments[1];\nvar result = (function faceBoxTemplate_jsReturn() {\n"+replacers[i].code + "\n})(); if (result === undefined) return ''; return result;" ))( vars, env ));
 						} catch(err) {
 							err.message = JSON.stringify(replacers[i], null, "  ") + err.message;
 							env.error.push(err);
