@@ -82,12 +82,26 @@ function Email (config) {
 
 Email.prototype = {
 
-  send: function (callback) {
+  send: function (cb) {
+    var callback = (function () {
+      var sent = false;
+      return function (err) {
+        if (sent) return;
+        sent = true;
+        cb(err);
+      };
+    })();
     if (!this.valid(callback)) return;
 		var args = ['-i', '-t'];
 		if (this.debug)
 			args.push('-v');
     var sendmail = spawn(this.path, args, this.options);
+    sendmail.on('error', function(err) {
+      if (this.debug) {
+        console.error('Sendmail Error: ', err);
+      }
+      callback(err);
+    });
     sendmail.on('exit', function(code) {
       var err = null;
       if (code !== 0) {
