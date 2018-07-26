@@ -5,7 +5,7 @@
 /* jshint -W084 */
 
 var http_statuses   = require(__dirname + "/objects/http_statuses.js");
-
+var parseParams     = require("application-prototype/constructors/request/params-parser");
 
 var appBuilder	= function () {
 
@@ -66,15 +66,30 @@ var extendResponseRequest	= function (res, req) {
 		configurable: true
 	});
 	Object.defineProperty(request, 'params', {
-		get: function() { return (request.app().getMountUpdateUrl(request.urlObject.pathname) || "").split("/").slice(3).map(function(v) {
-				var e,r;
-				try {
-					r = decodeURIComponent(v);
-				} catch(e) {
-					r = unescape(v);
+		get: function() {
+			if (!request._cachedParams) {
+				request._cachedParams = (request.app().getMountUpdateUrl(request.urlObject.pathname) || "").split("/").slice(3).map(function(v) {
+					var e,r;
+					try {
+						r = decodeURIComponent(v);
+					} catch(e) {
+						r = unescape(v);
+					}
+					return r;
+				});
+			}
+			let items = request._cachedParams.map(v => v);
+			console.log(request.url, request._currentRoute);
+			if (typeof(request._currentRoute) === "string") {
+				let parsedParams = parseParams(request.url, request._currentRoute);
+				if (parsedParams !== null && typeof(parsedParams) === "object") {
+					let param;
+					for (param in parsedParams) {
+						items[param + ''] = parsedParams[param];
+					}
 				}
-				return r;
-			});
+			};
+			return items;
 		},
 		set: function(v) {
 			appInstance.console.warn("[Request.params] is not configurable");
@@ -722,6 +737,7 @@ var _config	= {
 				i++;
 				if (_config.routeMatch(_config.httpListners[type][i-1].route, url, false, _config.httpListners[type][i-1].mount)) {
 					// console.log( "\033[1;34m oke-match mount: ", moduleObject.mountpath ,"; route: ", _config.httpListners[type][i-1].route, "; url: ", url, "\033[0m");
+					req._currentRoute = _config.httpListners[type][i-1].route[0] || null;
 					if (onMatch) {
 						onMatch(function () {
 							_config.httpListners[type][i-1].callback(req, res, next);
@@ -989,15 +1005,19 @@ var _config	= {
 					rt	= rt.replace(/\/+$/, '');
 				}
 				if (typeof(rt) === "string") {
-					c	= url[rt.length];
-					// appInstance.console.info("LAST Char", url.substring(0, route[i].length), " === ", route[i], ':', c, ':', route[i][route[i].length - 1]);
-					if (
-						( mount || ! url.substring(rt.length).match(/^((\/|)[^\?\/]+)/)) && // check same path
-						( url.substring(0, rt.length).replace(/\?$/, '/') === rt ) &&
-						( c === undefined || c === "?" || c === "/" || rt[rt.length - 1] === "/" )
-					) {
+					if (parseParams(url, rt) !== null) {
 						return true;
-						break;
+					} else {
+						c	= url[rt.length];
+						// appInstance.console.info("LAST Char", url.substring(0, route[i].length), " === ", route[i], ':', c, ':', route[i][route[i].length - 1]);
+						if (
+							( mount || ! url.substring(rt.length).match(/^((\/|)[^\?\/]+)/)) && // check same path
+							( url.substring(0, rt.length).replace(/\?$/, '/') === rt ) &&
+							( c === undefined || c === "?" || c === "/" || rt[rt.length - 1] === "/" )
+						) {
+							return true;
+							break;
+						}
 					}
 				} else {
 					if (url.match(rt)) {
