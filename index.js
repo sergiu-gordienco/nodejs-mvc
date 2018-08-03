@@ -111,14 +111,20 @@ var extendResponseRequest	= function (res, req) {
 				request.urlObject.post_vars	= data._post;
 				// urlObj.post_vars.data	= request.postData.toString('hex', 0, request.postData.length);
 				request.urlObject.file_vars	= data._files;
+			} else if (
+				(request.headers['content-type'] || '').indexOf('application/json') === 0
+			) {
+				var err;
+				data = request.postData.toString('utf-8', 0, request.postData.length);
+				try {
+					request.urlObject.post_vars = JSON.parse(data);
+					request.urlObject.file_vars	= {};
+				} catch (err) {
+					request.urlObject.post_vars	= data.parseUrlVars(true);
+					request.urlObject.file_vars	= {};
+				}
 			} else {
 				data = request.postData.toString('utf-8', 0, request.postData.length);
-				// var er;
-				// try {
-				// 	data = data.decodeURI();
-				// } catch (er) {
-				// 	data = data.unescape();
-				// }
 				request.urlObject.post_vars	= data.parseUrlVars(true);
 				request.urlObject.file_vars	= {};
 			}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>HTML Document</title>
+</head>
+<body>
+	<h1>Example of code section</h1>
+	<pre><code>var net = require('net');
+var client = net.connect({port: 8124},
+		function() { //'connect' listener
+			console.log('client connected');
+			client.write('world!\r\n');
+		});
+client.on('data', function(data) {
+	console.log(data.toString());
+	client.end();
+});
+client.on('end', function() {
+	console.log('client disconnected');
+});</code></pre>
+</body>
+</html>

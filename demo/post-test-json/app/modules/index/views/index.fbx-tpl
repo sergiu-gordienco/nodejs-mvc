@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Wellcome</title>
+</head>
+<body>
+<hr />
+	<h2>POST</h2>
+<hr />
+	It works !
+	<br />
+	<code>
+		<b>PageViews:</b> {{ vars.pageviews }}
+		<br />
+		<b>SessionDyn Id:</b> {{ vars.sessionDynId }} <i>- Fast CrossSession Memory Object</i>
+		<br />
+		<b>Session Id:</b> {{ vars.sessionId }} <i>- Default NodeJs Session Object</i>
+	</code>
+	<br />
+	<img src="screenshot.png" style="max-width: 50%;" />
+	<script>
+		var request = new XMLHttpRequest();
+
+		request.onload = function () {
+			alert(
+				JSON.stringify(
+					request.response
+				)
+			);
+		};
+		request.responseType = "json";
+		request.open("POST", "/test/", true);
+		request.setRequestHeader("content-type", "application/json");
+
+		request.send(
+			JSON.stringify(
+				{
+					"test": "string post data"
+				}
+			)
+		);
+	</script>
+</body>
+</html>
