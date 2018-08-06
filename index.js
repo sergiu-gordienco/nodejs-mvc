@@ -885,6 +885,13 @@ var _config	= {
 			});
 		};
 
+		request.postDataColect = function (cb, maxPostSize) {
+			postDataColect(
+				request,
+				cb,
+				maxPostSize
+			);
+		};
 
 		var mvcRun	= function () {
 			var state = root.onRequestCapture( request, response, appInstance );

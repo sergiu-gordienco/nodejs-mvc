@@ -1,6 +1,6 @@
 {
   "name": "nodejs-mvc",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "ApplicationBuilder Prototype - Event Based",
   "main": "index.js",
   "scripts": {
@@ -38,7 +38,7 @@
   },
   "homepage": "https://github.com/sergiu-gordienco/nodejs-mvc",
   "dependencies": {
-    "application-prototype": "^1.18.2",
+    "application-prototype": "^1.18.3",
     "connect": "3.3.5",
     "connect-multiparty": "1.2.5",
     "cookies": "0.6.1",

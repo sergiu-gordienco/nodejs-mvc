@@ -450,6 +450,18 @@ it is very optimized, and practically, doesn't store additional metadata.
  * `request.params`             - current parameters array
  * `request.postData`           - `Buffer Object` where was stored original POST data
  * `request.postVars()`         - returns `POST` vars stored in a object ( available as `request.body` )
+
+```javascript
+	// for PUT method or other
+	app.put(function (request, response, next) {
+		request.postDataColect(next);
+	});
+
+	app.put('/chat',function (request, response) {
+		response.send(request.body);
+	});
+```
+
  * `request.fileVars()`         - returns `FILE` vars stored in a object
  * `request.sessionDyn`         - returns `sessionDyn Object`
  * `request.session`            - returns `session Object`
