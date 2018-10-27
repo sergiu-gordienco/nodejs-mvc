@@ -322,9 +322,9 @@ var extendResponseRequest	= function (res, req) {
 		Object.defineProperty(request, 'ip', {
 			get: function() {
 				return request.headers['x-forwarded-for'] ||
-				request.connection.remoteAddress ||
-				request.socket.remoteAddress ||
-				request.connection.socket.remoteAddress || undefined;
+				(request.connection || {}).remoteAddress ||
+				(request.socket || {}).remoteAddress ||
+				((request.connection || {}).socket || {}).remoteAddress || undefined;
 			},
 			set: function(v) {
 				appInstance.console.warn("[Request.hostname] is not configurable");
@@ -558,6 +558,7 @@ var extendResponseRequest	= function (res, req) {
 					res.set('Content-Type', 'text/plain');
 			}
 			res.write(data);
+			res.end();
 		} if (data instanceof Buffer) {
 			if (!res.headersSent)
 				res.set('Content-Type', 'application/octet-stream');
