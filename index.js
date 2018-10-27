@@ -6,7 +6,7 @@
 
 var http_statuses   = require(__dirname + "/objects/http_statuses.js");
 var parseParams     = require("application-prototype/constructors/request/params-parser");
-
+var Busboy = require("busboy");
 var appBuilder	= function () {
 
 	var _classes	= {
@@ -101,16 +101,49 @@ var extendResponseRequest	= function (res, req) {
 	request.getVars	= function() {
 		return request.urlObject.get_vars;
 	};
-	request.postData	= new Buffer(0);
 	request.postVars	= function() {
 		var data;
 		if( !( "post_vars" in request.urlObject ) ) {
 			if( (request.headers['content-type'] || '').indexOf('multipart/form-data') === 0 && ( request.method == 'POST' || request.method == 'PUT' ) ) {
-				var hex		= request.postData.toString('hex', 0, request.postData.length);
-				data	= hex.fromHex().parseMultipartFormData(true,false,true,hex);
-				request.urlObject.post_vars	= data._post;
-				// urlObj.post_vars.data	= request.postData.toString('hex', 0, request.postData.length);
-				request.urlObject.file_vars	= data._files;
+				request.urlObject.post_vars = {};
+				request.urlObject.file_vars	= {};
+
+				request._body.forEach(function (field) {
+					var p = request.urlObject.post_vars;
+					((field.fieldname || "") + "")
+						.match(/\[*[^\[]+\]*/g)
+						.map(v => v.replace(/^\[([^\]]+)\]$/, '$1'))
+						.forEach((k, i, a) => {
+							if (p && typeof (p) === "object") {
+								if (i === a.length - 1) {
+									p[k] = (((field.data.value || {}).text || "") + "");
+								} else {
+									p[k] = p[k] || {};
+									p = p[k];
+								}
+							} else {
+								p = null;
+							}
+						});
+				});
+				request._files.forEach(function (file) {
+					var p = request.urlObject.file_vars;
+					((file.fieldname || "") + "")
+						.match(/\[*[^\[]+\]*/g)
+						.map(v => v.replace(/^\[([^\]]+)\]$/, '$1'))
+						.forEach((k, i, a) => {
+							if (p && typeof (p) === "object") {
+								if (i === a.length - 1) {
+									p[k] = file.data;
+								} else {
+									p[k] = p[k] || {};
+									p = p[k];
+								}
+							} else {
+								p = null;
+							}
+						});
+				});
 			} else if (
 				(request.headers['content-type'] || '').indexOf('application/json') === 0
 			) {
@@ -776,113 +809,132 @@ var _config	= {
 			});
 		});
 	},
-	handleServerResponseLogic	: function( request, response, next ) {
+	handleServerResponseLogic	: function( request, response, nextArg ) {
+		let next    = (function () {
+			var done = false;
+			return function () {
+				if (done) return;
+				done = true;
+				if (nextArg) nextArg();
+			};
+		})();
 		var root	= this;
 		var url		= request.app().getMountUpdateUrl(request.url);
 
-		var postDataCallbacks	= [];
-		var postDataStatus	= 'pending';
+
+		request.maxPostSize = root.maxPostSize;
+		request._body = [];
+		request._files = [];
+
+		var postDataCallbacks = [];
+		var postDataChunks = [];
+		var postDataSize = 0;
+
+		var postDataColectInitialized = false;
+		var postDataColectDone = false;
 		var postDataColect	= function (request, callback, maxPostSize) {
-			var cb;
-			if (postDataStatus == 'progress') {
-				var cbExecuted = false;
-				cb = function (err) {
-					if (cbExecuted) return;
-					cbExecuted = true;
-					callback(err);
-				};
-				postDataCallbacks.push(cb);
-				return;
-			} else if (postDataStatus == 'pending') {
-				postDataStatus	= 'progress';
-				var cbExecuted = false;
-				cb = function (err) {
-					if (cbExecuted) return;
-					cbExecuted = true;
-					callback(err);
-				};
-				postDataCallbacks.push(cb);
-			} else if (postDataStatus == 'done') {
-				callback();
-				return;
-			} else if (postDataStatus == 'error') {
-				callback();
-				return;
-			}
-			if (typeof(maxPostSize) !== "number") {
-				maxPostSize	= root.maxPostSize;
-			}
-			var stopRecieving = false;
-			request.on("data", function(chunk) {
-				if (stopRecieving) {
-					return;
-				}
-				// request.postData += chunk;
-				// console.log(maxPostSize, " :: ", chunk);
-				// if(request.postDataState) {
-					if( request.postData.length + chunk.length <= maxPostSize ) {
-						request.postData	= Buffer.concat([request.postData, chunk]);
-					} else {
-						// request.postDataState	= false;
-						var maxPostSizeresponse = root.onMaxPostSize( request, response, appInstance, maxPostSize );
-						if(!maxPostSizeresponse) {
-							var e;
-							try {
-								var e = Error(maxPostSize + ' bytes ; Max post size excedeed');
-								if (maxPostSizeresponse === false) {
-									stopRecieving = true;
-									response.end();
-									if (request.destroy) request.destroy(e);
-								} else {
-									stopRecieving = true;
-									postDataCallbacks = [];
-									if (request.destroy) request.destroy(e);
-								}
-								postDataCallbacks.forEach(function (cb) {
-									cb(e);
-								});
-							} catch(e) {
-								console.error(e);
-								postDataCallbacks.forEach(function (cb) {
-									cb(e);
-								});
-							}
-							return false;
-						}
-					}
-				// }
-			});
-			request.on("error", function(err) {
-				postDataStatus	= 'error';
-				if ("file_vars" in requfest.urlObject) {
-					delete request.urlObject.file_vars;
-				}
-				if ("post_vars" in request.urlObject) {
-					delete request.urlObject.post_vars;
-				}
+			var finish = function (err) {
+				postDataColectDone = true;
 				postDataCallbacks.forEach(function (cb) {
 					cb(err);
 				});
-				appInstance.console.error(err);
-				var er;
-				try {
-					request.end();
-				} catch (er) {
-					// appInstance.console.error(er);
+				postDataCallbacks = [];
+			};
+
+			if (postDataColectInitialized) {
+				if (postDataColectDone) {
+					callback();
+				} else {
+					postDataCallbacks.push(callback);
+				}
+				return;
+			} else {
+				postDataColectInitialized = true;
+				postDataCallbacks.push(callback);
+			}
+
+			var busboy = new Busboy({
+				headers: request.headers,
+				limits : {
+					fieldNameSize: 255,
+					fieldSize: maxPostSize || request.maxPostSize,
+					fileSize: maxPostSize || request.maxPostSize
 				}
 			});
-			request.on("end", function() {
-				postDataStatus	= 'done';
-				if ("file_vars" in request.urlObject) {
-					delete request.urlObject.file_vars;
-				}
-				if ("post_vars" in request.urlObject) {
-					delete request.urlObject.post_vars;
-				}
-				postDataCallbacks.forEach(function (cb) {
-					cb();
+			busboy.on('file', function(fieldname, fileStream, fileName, encoding, mimetype) {
+				var file = {
+					fieldname : fieldname,
+					data : {
+						fileName : fileName,
+						encoding : encoding,
+						fileStream : () => fileStream,
+						fileData : [],
+						fileSize : 0,
+						contentType : mimetype,
+						loaded   : false
+					}
+				};
+				request._files.push(file);
+				fileStream.on('data', function(data) {
+					file.data.fileData.push(data);
+					postDataSize += data.length;
+					file.data.fileSize += data.length;
+				});
+				fileStream.on('end', function() {
+					file.data.fileData = Buffer.concat(file.data.fileData);
+					file.data.loaded = true;
 				});
 			});
+			busboy.on('field', function(fieldname, value, fieldnameTruncated, valTruncated, encoding, mimetype) {
+				postDataSize += value.length;
+				request._body.push({
+					fieldname: fieldname,
+					data: {
+						value : value,
+						fieldnameTruncated : fieldnameTruncated,
+						valTruncated : valTruncated,
+						encoding : encoding,
+						mimetype : mimetype
+					}
+				});
+			});
+
+			busboy.on('error', function (err) {
+				finish();
+				appInstance.console.error(err);
+				console.log(request.postData.toString());
+				try {
+					request.end();
+				} catch (err) {}
+			});
+
+			busboy.on('finish', function() {
+				finish();
+			});
+
+			request.on("data", function(chunk) {
+				postDataChunks.push(chunk);
+			});
+
+			request.on("error", function(err) {
+				finish();
+				appInstance.console.error(err);
+				try {
+					request.end();
+				} catch (err) {}
+			});
+
+			request.on("end", function() {
+				request.postData	= Buffer.concat(postDataChunks);
+				let Readable = require('stream').Readable;
+				let readable = new Readable()
+				readable._read = () => {} // _read is required but you can noop it
+				readable.push(request.postData);
+				readable.push(null)
+
+				readable.pipe(busboy) // consume the stream
+			});
+			// request.pipe(busboy);
 		};
 
 		request.postDataColect = function (cb, maxPostSize) {

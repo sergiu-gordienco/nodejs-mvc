@@ -14,9 +14,9 @@
 <hr />
 	<h2>POST Multipart</h2>
 	<form action="/test/" method="post" enctype="multipart/form-data">
-		<input type="text" name="a" value="..." />
-		<input type="file" name="fa" />
-		<input type="file" name="fb" />
+		<input type="text" name="reference[text]" value="..." />
+		<input type="file" name="file[first]" />
+		<input type="file" name="file[second]" />
 		<input type="submit">
 	</form>
 <hr />
