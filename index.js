@@ -116,7 +116,7 @@ var extendResponseRequest	= function (res, req) {
 						.forEach((k, i, a) => {
 							if (p && typeof (p) === "object") {
 								if (i === a.length - 1) {
-									p[k] = ((field.data.value || {}) + "");
+									p[k] = ((field.data.value || '') + "");
 								} else {
 									p[k] = p[k] || {};
 									p = p[k];
