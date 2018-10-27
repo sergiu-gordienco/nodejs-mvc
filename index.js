@@ -952,7 +952,11 @@ var _config	= {
 				readable.push(null)
 
 				if (!requestAborted) {
-					readable.pipe(busboy) // consume the stream
+					if ((request.headers['content-type'] || '').indexOf('multipart/form-data') === 0) {
+						readable.pipe(busboy) // consume the stream
+					} else {
+						finish();
+					}
 				}
 			});
 			// request.pipe(busboy);
