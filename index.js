@@ -677,7 +677,7 @@ var _config	= {
 	onMaxPostSize		: function( request, response, app, maxPostSize ) {
 		request.ERROR_MAX_POST_SIZE = true;
 		appInstance.console.error("ERROR_MAX_POST_SIZE", "REACHED LIMIT OF " + maxPostSize);
-		return true;	// if false abbord data colecting
+		return true;	// if false force close request / do not send to other parsers
 	},
 	handleStaticResponse	: function( request, response, path, callback ) {
 		if (typeof(path) === "function") {
@@ -796,6 +796,12 @@ var _config	= {
 	},
 	handleServerResponse		: function (request, response, next, isMount) {
 		var root	= _config;
+
+		request.maxPostSize = root.maxPostSize;
+		request._body = [];
+		request._files = [];
+		request.postData = new Buffer([]);
+
 		root.runHttpListners("preuse", request, response, function () {
 			root.handleServerMidleware(request, response, function () {
 				// console.log("CHECK STATE handleServerResponse", next);
@@ -821,13 +827,7 @@ var _config	= {
 		var root	= this;
 		var url		= request.app().getMountUpdateUrl(request.url);
 
-
-		request.maxPostSize = root.maxPostSize;
-		request._body = [];
-		request._files = [];
-
 		var postDataCallbacks = [];
-		var postDataChunks = [];
 		var postDataSize = 0;
 
 		var postDataColectInitialized = false;
@@ -852,13 +852,12 @@ var _config	= {
 				postDataColectInitialized = true;
 				postDataCallbacks.push(callback);
 			}
-
 			var busboy = new Busboy({
 				headers: request.headers,
 				limits : {
 					fieldNameSize: 255,
-					fieldSize: maxPostSize || request.maxPostSize,
-					fileSize: maxPostSize || request.maxPostSize
+					fieldSize: request.maxPostSize,
+					fileSize: request.maxPostSize
 				}
 			});
 			busboy.on('file', function(fieldname, fileStream, fileName, encoding, mimetype) {
@@ -877,16 +876,19 @@ var _config	= {
 				request._files.push(file);
 				fileStream.on('data', function(data) {
 					file.data.fileData.push(data);
-					postDataSize += data.length;
 					file.data.fileSize += data.length;
+				});
+				fileStream.on('error', function (err) {
+					file.data.error = err;
+					appInstance.console.error(err);
 				});
 				fileStream.on('end', function() {
 					file.data.fileData = Buffer.concat(file.data.fileData);
-					file.data.loaded = true;
+					if (!file.data.error)
+						file.data.loaded = true;
 				});
 			});
 			busboy.on('field', function(fieldname, value, fieldnameTruncated, valTruncated, encoding, mimetype) {
-				postDataSize += value.length;
 				request._body.push({
 					fieldname: fieldname,
 					data: {
@@ -902,7 +904,6 @@ var _config	= {
 			busboy.on('error', function (err) {
 				finish();
 				appInstance.console.error(err);
-				console.log(request.postData.toString());
 				try {
 					request.end();
 				} catch (err) {}
@@ -912,27 +913,47 @@ var _config	= {
 				finish();
 			});
 
+			var requestAborted = false;
 			request.on("data", function(chunk) {
-				postDataChunks.push(chunk);
+				if (requestAborted) return;
+
+				var dataLimit = request.maxPostSize;
+
+				if (dataLimit < postDataSize) {
+					requestAborted = true;
+					if (_config.onMaxPostSize(request, response, appInstance, dataLimit) === false) {
+						// finish();
+						try { request.abort(); } catch (err) {};
+						try { request.end(); } catch (err) {};
+						try { response.end(); } catch (err) {};
+						return;
+					} else {
+						finish();
+					}
+				}
+
+				request.postData	= Buffer.concat([request.postData, chunk]);
+
+				postDataSize += chunk.length;
 			});
 
 			request.on("error", function(err) {
 				finish();
 				appInstance.console.error(err);
-				try {
-					request.end();
-				} catch (err) {}
+				try { request.abort(); } catch (err) {};
+				try { request.end(); } catch (err) {};
 			});
 
 			request.on("end", function() {
-				request.postData	= Buffer.concat(postDataChunks);
 				let Readable = require('stream').Readable;
 				let readable = new Readable()
 				readable._read = () => {} // _read is required but you can noop it
 				readable.push(request.postData);
 				readable.push(null)
 
-				readable.pipe(busboy) // consume the stream
+				if (!requestAborted) {
+					readable.pipe(busboy) // consume the stream
+				}
 			});
 			// request.pipe(busboy);
 		};
@@ -963,9 +984,11 @@ var _config	= {
 					if( !action.usePostData() ) {
 						action.run( request, response );
 					} else {
+						request.maxPostSize = action.maxPostSize();
+
 						postDataColect(request, function (err) {
 							action.run( request, response );
-						}, action.maxPostSize());
+						});
 					}
 				} else {
 					root.handleStaticResponse( request, response, (next ? function (err) {
