@@ -852,67 +852,6 @@ var _config	= {
 				postDataColectInitialized = true;
 				postDataCallbacks.push(callback);
 			}
-			var busboy = new Busboy({
-				headers: request.headers,
-				limits : {
-					fieldNameSize: 255,
-					fieldSize: request.maxPostSize,
-					fileSize: request.maxPostSize
-				}
-			});
-			busboy.on('file', function(fieldname, fileStream, fileName, encoding, mimetype) {
-				var file = {
-					fieldname : fieldname,
-					data : {
-						fileName : fileName,
-						encoding : encoding,
-						fileStream : () => fileStream,
-						fileData : [],
-						fileSize : 0,
-						contentType : mimetype,
-						loaded   : false
-					}
-				};
-				request._files.push(file);
-				fileStream.on('data', function(data) {
-					file.data.fileData.push(data);
-					file.data.fileSize += data.length;
-				});
-				fileStream.on('error', function (err) {
-					file.data.error = err;
-					appInstance.console.error(err);
-				});
-				fileStream.on('end', function() {
-					file.data.fileData = Buffer.concat(file.data.fileData);
-					if (!file.data.error)
-						file.data.loaded = true;
-				});
-			});
-			busboy.on('field', function(fieldname, value, fieldnameTruncated, valTruncated, encoding, mimetype) {
-				request._body.push({
-					fieldname: fieldname,
-					data: {
-						value : value,
-						fieldnameTruncated : fieldnameTruncated,
-						valTruncated : valTruncated,
-						encoding : encoding,
-						mimetype : mimetype
-					}
-				});
-			});
-
-			busboy.on('error', function (err) {
-				finish();
-				appInstance.console.error(err);
-				try {
-					request.end();
-				} catch (err) {}
-			});
-
-			busboy.on('finish', function() {
-				finish();
-			});
-
 			var requestAborted = false;
 			request.on("data", function(chunk) {
 				if (requestAborted) return;
@@ -953,6 +892,67 @@ var _config	= {
 
 				if (!requestAborted) {
 					if ((request.headers['content-type'] || '').indexOf('multipart/form-data') === 0) {
+						var busboy = new Busboy({
+							headers: request.headers,
+							limits : {
+								fieldNameSize: 255,
+								fieldSize: request.maxPostSize,
+								fileSize: request.maxPostSize
+							}
+						});
+						busboy.on('file', function(fieldname, fileStream, fileName, encoding, mimetype) {
+							var file = {
+								fieldname : fieldname,
+								data : {
+									fileName : fileName,
+									encoding : encoding,
+									fileStream : () => fileStream,
+									fileData : [],
+									fileSize : 0,
+									contentType : mimetype,
+									loaded   : false
+								}
+							};
+							request._files.push(file);
+							fileStream.on('data', function(data) {
+								file.data.fileData.push(data);
+								file.data.fileSize += data.length;
+							});
+							fileStream.on('error', function (err) {
+								file.data.error = err;
+								appInstance.console.error(err);
+							});
+							fileStream.on('end', function() {
+								file.data.fileData = Buffer.concat(file.data.fileData);
+								if (!file.data.error)
+									file.data.loaded = true;
+							});
+						});
+						busboy.on('field', function(fieldname, value, fieldnameTruncated, valTruncated, encoding, mimetype) {
+							request._body.push({
+								fieldname: fieldname,
+								data: {
+									value : value,
+									fieldnameTruncated : fieldnameTruncated,
+									valTruncated : valTruncated,
+									encoding : encoding,
+									mimetype : mimetype
+								}
+							});
+						});
+
+						busboy.on('error', function (err) {
+							finish();
+							appInstance.console.error(err);
+							try {
+								request.end();
+							} catch (err) {}
+						});
+
+						busboy.on('finish', function() {
+							finish();
+						});
+
 						readable.pipe(busboy) // consume the stream
 					} else {
 						finish();
