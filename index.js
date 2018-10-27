@@ -822,7 +822,11 @@ var _config	= {
 			return function () {
 				if (done) return;
 				done = true;
-				if (nextArg) nextArg();
+				if (nextArg) {
+					nextArg();
+				} else {
+					root.handleStaticResponse(request, response);
+				}
 			};
 		})();
 		var root	= this;
