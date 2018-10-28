@@ -104,6 +104,10 @@ var extendResponseRequest	= function (res, req) {
 	request.postVars	= function() {
 		var data;
 		if( !( "post_vars" in request.urlObject ) ) {
+			console.info(request.urlObject);
+			console.info(request.postData.toString());
+			console.info(request._body);
+			console.info(request._files);
 			if( (request.headers['content-type'] || '').indexOf('multipart/form-data') === 0 && ( request.method == 'POST' || request.method == 'PUT' ) ) {
 				request.urlObject.post_vars = {};
 				request.urlObject.file_vars	= {};
@@ -858,6 +862,7 @@ var _config	= {
 				postDataCallbacks.push(callback);
 			}
 			var requestAborted = false;
+
 			request.on("data", function(chunk) {
 				if (requestAborted) return;
 
@@ -888,83 +893,115 @@ var _config	= {
 				try { request.end(); } catch (err) {};
 			});
 
-			request.on("end", function() {
-				let Readable = require('stream').Readable;
-				let readable = new Readable()
-				readable._read = () => {} // _read is required but you can noop it
-				readable.push(request.postData);
-				readable.push(null)
+			if ((request.headers['content-type'] || '').indexOf('multipart/form-data') === 0) {
 
-				if (!requestAborted) {
-					if ((request.headers['content-type'] || '').indexOf('multipart/form-data') === 0) {
-						var busboy = new Busboy({
-							headers: request.headers,
-							limits : {
-								fieldNameSize: 255,
-								fieldSize: request.maxPostSize,
-								fileSize: request.maxPostSize
+				request.on("end", function() {
+					let Readable = require('stream').Readable;
+					let readable = new Readable()
+					readable._read = () => {} // _read is required but you can noop it
+					readable.push(request.postData);
+					readable.push(null);
+
+					var detectedBoundary = (
+							request.postData
+								.slice(0, 1024).toString()
+								.match(/^\-\-(\-{10,}[a-z0-9]{6,}\-*)(\r|)\n/) || []
+						)[1] || null;
+
+					if (detectedBoundary) {
+						var calculatedHeader = 'multipart/form-data; boundary=' + detectedBoundary;
+						if (
+							calculatedHeader !== request.headers['content-type']
+						) {
+							console.warn(
+								"MultipartFormdata: boundary replaced from ",
+								request.headers['content-type'],
+								calculatedHeader
+							);
+						}
+						request.headers['content-type'] = calculatedHeader;
+					}
+
+					console.warn("BusBoy Parse", request.headers, request.postData.toString());
+					var busboy = new Busboy({
+						headers: request.headers,
+						limits : {
+							fieldNameSize: 255,
+							fieldSize: request.maxPostSize,
+							fileSize: request.maxPostSize
+						}
+					});
+					busboy.on('file', function(fieldname, fileStream, fileName, encoding, mimetype) {
+						console.warn("BusBoy File", arguments);
+						var file = {
+							fieldname : fieldname,
+							data : {
+								fileName : fileName,
+								encoding : encoding,
+								fileStream : () => fileStream,
+								fileData : [],
+								fileSize : 0,
+								contentType : mimetype,
+								loaded   : false
+							}
+						};
+						request._files.push(file);
+						fileStream.on('data', function(data) {
+							file.data.fileData.push(data);
+							file.data.fileSize += data.length;
+						});
+						fileStream.on('error', function (err) {
+							file.data.error = err;
+							appInstance.console.error(err);
+						});
+						fileStream.on('end', function() {
+							file.data.fileData = Buffer.concat(file.data.fileData);
+							if (!file.data.error)
+								file.data.loaded = true;
+						});
+					});
+					busboy.on('field', function(fieldname, value, fieldnameTruncated, valTruncated, encoding, mimetype) {
+						console.warn("BusBoy Field", arguments);
+						request._body.push({
+							fieldname: fieldname,
+							data: {
+								value : value,
+								fieldnameTruncated : fieldnameTruncated,
+								valTruncated : valTruncated,
+								encoding : encoding,
+								mimetype : mimetype
 							}
 						});
-						busboy.on('file', function(fieldname, fileStream, fileName, encoding, mimetype) {
-							var file = {
-								fieldname : fieldname,
-								data : {
-									fileName : fileName,
-									encoding : encoding,
-									fileStream : () => fileStream,
-									fileData : [],
-									fileSize : 0,
-									contentType : mimetype,
-									loaded   : false
-								}
-							};
-							request._files.push(file);
-							fileStream.on('data', function(data) {
-								file.data.fileData.push(data);
-								file.data.fileSize += data.length;
-							});
-							fileStream.on('error', function (err) {
-								file.data.error = err;
-								appInstance.console.error(err);
-							});
-							fileStream.on('end', function() {
-								file.data.fileData = Buffer.concat(file.data.fileData);
-								if (!file.data.error)
-									file.data.loaded = true;
-							});
-						});
-						busboy.on('field', function(fieldname, value, fieldnameTruncated, valTruncated, encoding, mimetype) {
-							request._body.push({
-								fieldname: fieldname,
-								data: {
-									value : value,
-									fieldnameTruncated : fieldnameTruncated,
-									valTruncated : valTruncated,
-									encoding : encoding,
-									mimetype : mimetype
-								}
-							});
-						});
+					});
 
-						busboy.on('error', function (err) {
+					busboy.on('error', function (err) {
+						console.warn("BusBoy Error", arguments);
+						if (!requestAborted) {
+							requestAborted = true;
 							finish();
-							appInstance.console.error(err);
-							try {
-								request.end();
-							} catch (err) {}
-						});
+						}
+						appInstance.console.error(err);
+						try {
+							request.end();
+						} catch (err) {}
+					});
 
-						busboy.on('finish', function() {
+					busboy.on('finish', function() {
+						console.warn("BusBoy Finish", arguments);
+						if (!requestAborted) {
 							finish();
-						});
+						}
+					});
 
-						readable.pipe(busboy) // consume the stream
-					} else {
+					readable.pipe(busboy) // consume the stream
+				});
+			} else {
+				request.on("end", function() {
+					if (!requestAborted) {
 						finish();
 					}
-				}
-			});
-			// request.pipe(busboy);
+				});
+			}
 		};
 
 		request.postDataColect = function (cb, maxPostSize) {
