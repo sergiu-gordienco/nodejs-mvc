@@ -104,10 +104,6 @@ var extendResponseRequest	= function (res, req) {
 	request.postVars	= function() {
 		var data;
 		if( !( "post_vars" in request.urlObject ) ) {
-			console.info(request.urlObject);
-			console.info(request.postData.toString());
-			console.info(request._body);
-			console.info(request._files);
 			if( (request.headers['content-type'] || '').indexOf('multipart/form-data') === 0 && ( request.method == 'POST' || request.method == 'PUT' ) ) {
 				request.urlObject.post_vars = {};
 				request.urlObject.file_vars	= {};
