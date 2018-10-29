@@ -225,7 +225,7 @@ var faceboxUpdateProto	= function( root ) {
 				p.forEach(function(v){
 					var m;
 					if(m = v.match(/^([^\=]+)\=([\s\S]*)$/)) {
-						k = m[1];
+						k = (m[1]).decodeURI();
 						v = m[2];
 						if(!json) {
 							r[k]	= (v).decodeURI();
