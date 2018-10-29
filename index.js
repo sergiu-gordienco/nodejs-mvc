@@ -901,7 +901,7 @@ var _config	= {
 					var detectedBoundary = (
 							request.postData
 								.slice(0, 1024).toString()
-								.match(/^\-\-(\-{10,}[a-z0-9]{6,}\-*)(\r|)\n/) || []
+								.match(/^\-\-(\-{4,}[A-Za-z0-9]{4,}\-*)(\r|)\n/) || []
 						)[1] || null;
 
 					if (detectedBoundary) {
@@ -918,7 +918,7 @@ var _config	= {
 						request.headers['content-type'] = calculatedHeader;
 					}
 
-					console.warn("BusBoy Parse", request.headers, request.postData.toString());
+					// console.warn("BusBoy Parse", request.headers, request.postData.toString());
 					var busboy = new Busboy({
 						headers: request.headers,
 						limits : {
@@ -928,7 +928,7 @@ var _config	= {
 						}
 					});
 					busboy.on('file', function(fieldname, fileStream, fileName, encoding, mimetype) {
-						console.warn("BusBoy File", arguments);
+						// console.warn("BusBoy File", arguments);
 						var file = {
 							fieldname : fieldname,
 							data : {
@@ -957,7 +957,7 @@ var _config	= {
 						});
 					});
 					busboy.on('field', function(fieldname, value, fieldnameTruncated, valTruncated, encoding, mimetype) {
-						console.warn("BusBoy Field", arguments);
+						// console.warn("BusBoy Field", arguments);
 						request._body.push({
 							fieldname: fieldname,
 							data: {
@@ -971,7 +971,7 @@ var _config	= {
 					});
 
 					busboy.on('error', function (err) {
-						console.warn("BusBoy Error", arguments);
+						// console.warn("BusBoy Error", arguments);
 						if (!requestAborted) {
 							requestAborted = true;
 							finish();
@@ -983,7 +983,7 @@ var _config	= {
 					});
 
 					busboy.on('finish', function() {
-						console.warn("BusBoy Finish", arguments);
+						// console.warn("BusBoy Finish", arguments);
 						if (!requestAborted) {
 							finish();
 						}
