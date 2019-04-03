@@ -79,7 +79,7 @@ var extendResponseRequest	= function (res, req) {
 				});
 			}
 			let items = request._cachedParams.map(v => v);
-			console.log(request.url, request._currentRoute);
+			// console.log(request.url, request._currentRoute);
 			if (typeof(request._currentRoute) === "string") {
 				let parsedParams = parseParams(request.url, request._currentRoute);
 				if (parsedParams !== null && typeof(parsedParams) === "object") {
