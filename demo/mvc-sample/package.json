@@ -8,7 +8,7 @@
   },
   "author": "Sergiu Gordienco <sergiu.gordienco@gmail.com> (http://www.cloudwebcode.com/)",
   "license": "MIT",
-  "dependencies"    : {
-    "nodejs-mvc"    : "*"
+  "dependencies": {
+    "nodejs-mvc": "*"
   }
 }

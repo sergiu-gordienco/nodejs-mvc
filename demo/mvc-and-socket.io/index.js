@@ -9,7 +9,6 @@ var server	= require("http").createServer(function( request, response, next ) {
 	app.handleServerResponse( request, response, next );
 });
 
-app.sessionCookieName("ssid");
 app.sessionDynCookieName("ssiddyn");
 app.sessionDynCookieDomain(false);
 app.sessionDynAutoUpdate(true);

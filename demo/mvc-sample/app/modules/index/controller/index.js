@@ -10,7 +10,6 @@ module.exports	= {
 			'index',
 			{
 				sessionDynId : request.sessionDyn.sessionId(),
-				sessionId : request.session.id,
 				pageviews: (++_vars.pageviews)
 			});
 	}

@@ -6,7 +6,6 @@
 
 var _classes	= {
 	fs		: require('fs'),
-	jade	: require("jade"),
 	facebox	: require(__dirname+'/facebox-templates.js')()
 };
 
@@ -63,26 +62,6 @@ var buildViewer	= function () {
 						console.log("Write Response but it is Finished", getStackTrace());
 					}
 				});
-			} else if( view.path.match(/\.(jade)$/) ) {
-				// _classes.facebox.updateEnvVars(_configObject.envVars);
-				// _classes.facebox.updateEnvVars({ response: response });
-				// console.log({
-				// 	env		: _classes.facebox.getEnvVars(),
-				// 	vars	: options
-				// });
-				var html	= _classes.jade.renderFile(view.path, {
-					env		: _classes.facebox.getEnvVars(),
-					vars	: options
-				});
-				if (!response.headersSent) {
-					response.set('Content-Type', 'text/html; charset=utf-8');
-				}
-				if (!response.finished) {
-					response.write(html);
-					response.end();
-				} else {
-					console.log("Write Response but it is Finished", getStackTrace());
-				}
 			} else {
 				if (!response.headersSent) {
 					response.set('Content-Type', 'text/html; charset=utf-8');

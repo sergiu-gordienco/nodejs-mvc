@@ -6,7 +6,6 @@
 
 var http_statuses   = require(__dirname + "/objects/http_statuses.js");
 var parseParams     = require("application-prototype/constructors/request/params-parser");
-var Busboy = require("busboy");
 var appBuilder	= function () {
 
 	var _classes	= {
@@ -25,13 +24,20 @@ var appBuilder	= function () {
 			return a;
 		},
 		cookies	: require('cookies'),
-		expressSession	: require('express-session'),
 		extensions		: require(__dirname+"/objects/extensions.js")
 	};
 
 
 var extendResponseRequest	= function (res, req) {
 	var request	= req;
+
+
+	request.cookieManager	= request.cookieManager || new _classes.cookies(request, res, (
+		request.secretCookieKey ? {
+			// TODO encode cookie keys correctly
+			"keys" : [ request.secretCookieKey ]
+		} : {}
+	));
 
 	req.app = res.app	= function () {
 		return moduleObject;
@@ -382,7 +388,7 @@ var extendResponseRequest	= function (res, req) {
 	};
 
 	res.clearCookie = function(name, options){
-		var opts = { expires: new Date(1), path: '/' };
+		var opts = { expires: new Date(1) }; // , path: '/'
 		return req.cookieManager.set(name, '', options ? _classes.merge(opts, options) : opts);
 	};
 
@@ -646,17 +652,9 @@ var _config	= {
 	'strict routing': true,
 	sessionExpire	: 600,
 	maxPostSize		: 4 * 1024 * 1024,
-	sessionCookieName	: 'ssid',
+	sessionCookieName	: 'ssiddyn',
 	sessionCookieDomain	: false,
 	sessionAutoUpdate	: true,
-	// default session
-	sessionHandler	: false,
-	sessionStore	: new _classes.expressSession.MemoryStore(),
-	sessionKey		: "ssid",
-	sessionSecret	: "MY_SECRET",
-	// cookie secret
-	cookieSecret	: false, // default use session
-	quiteHandler	: true,
 	// other config
 	controllers	: {},
 	httpStates	: {},
@@ -707,62 +705,25 @@ var _config	= {
 	},
 	handleServerMidleware	: function (request, response, next) {
 		var root	= _config;
-		if (!root.sessionHandler) {
-			root.sessionHandler	= _classes.expressSession({
-				secret	: root.sessionSecret,
-				key		: root.sessionKey,
-				resave	: true,
-				saveUninitialized: true,
-				store	: root.sessionStore
-			});
-		}
-		if (request) { // TODO
-			request.secret	= request.isHttps;
-			request.cookieSecret	= root.cookieSecret || root.sessionSecret;
-		}
-		request.cookieManager	= request.cookieManager || new _classes.cookies(request, response, (
-			request.secret ? {
-				// TODO encode cookie keys correctly
-				"keys" : [( root.cookieSecret || root.sessionSecret )]
-			} : {}
-		));
+
 		extendResponseRequest(response, request);
-		root.sessionHandler(request, response, function (err) {
-			if (err) {
-				if (typeof(next) === "function") {
-					return next(err, {
-						request	: request,
-						response	: response
-					});
-				} else {
-					if (!root.quiteHandler) {
-						throw err;
-					} else {
-						appInstance.console.error(err);
-					}
-				}
-			} else {
-				if (!request.sessionDyn && root.sessionCookieName) {
-					request.sessionDyn	= new sessionInstance( request, response, appInstance, {
-						expire			: root.sessionExpire,
-						cookieName		: root.sessionCookieName,
-						cookieDomain	: root.sessionCookieDomain
-					} );
-					if( root.sessionExpire && root.sessionAutoUpdate ) {
-						request.sessionDyn.setExpire( root.sessionExpire );
-					}
-					request.sessionDyn.sessionId();
-				}
-				if (typeof(next) === "function") {
-					return next();
-				} else {
-					appInstance.console.error(new Error("No request handler"));
-				}
+
+		if (!request.sessionDyn && root.sessionCookieName) {
+			request.sessionDyn	= new sessionInstance( request, response, appInstance, {
+				expire			: root.sessionExpire,
+				cookieName		: root.sessionCookieName,
+				cookieDomain	: root.sessionCookieDomain
+			} );
+			if( root.sessionExpire && root.sessionAutoUpdate ) {
+				request.sessionDyn.setExpire( root.sessionExpire );
 			}
-			// console.log("Session", arguments);
-			// console.log("Request", request);
-			// console.log("Response", response);
-		});
+			request.sessionDyn.sessionId();
+		}
+		if (typeof(next) === "function") {
+			return next();
+		} else {
+			appInstance.console.error(new Error("No request handler"));
+		}
 	},
 	runHttpListners	: function (type, req, res, callback, onMatch) {
 		var i = 0;
@@ -1302,24 +1263,6 @@ var moduleObject	= {
 			_config.sessionAutoUpdate	= !!state;
 		}
 		return _config.sessionAutoUpdate;
-	},
-	sessionCookieName	: function( name ) {
-		if( typeof( name ) === "string" ) {
-			_config.sessionKey	= name;
-		}
-		return _config.sessionKey;
-	},
-	sessionSecretKey	: function( name ) {
-		if( typeof( name ) === "string" ) {
-			_config.sessionSecret	= name;
-		}
-		return _config.sessionSecret;
-	},
-	cookieSecretKey	: function( name ) {
-		if( typeof( name ) === "string" ) {
-			_config.cookieSecret	= name;
-		}
-		return _config.cookieSecret;
 	},
 	controllerExists	: function() {
 		return ( moduleObject._functions.isValidIdentifier(arguments[0]) && arguments[0] in _config.controllers );

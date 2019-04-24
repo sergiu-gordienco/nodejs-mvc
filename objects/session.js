@@ -9,7 +9,9 @@ var sessionCleaner	= function() {
 setInterval(function() {
 	sessionCleaner();
 },1000);
+
 module.exports	= function( req, res, app, options ) {
+
 	var _sessionsLife	= 600;
 	if (req === true && typeof(res) === "undefined") {
 		var _functions	= {
@@ -57,7 +59,7 @@ module.exports	= function( req, res, app, options ) {
 		return _functions;
 	};
 	var _config	= {
-		cookieName		: 'ssid',
+		cookieName		: 'ssiddyn',
 		cookieDomain	: false,
 		ssid			: false
 	};
@@ -99,19 +101,12 @@ module.exports	= function( req, res, app, options ) {
 			return (""+session).sha256();
 		},
 		genSessionId	: function() {
-			return _functions.ip()+'-'+new Date().valueOf()+'-'+Math.floor(Math.random()*1000000000)+'-'+Math.floor(Math.random()*1000000000);
+			return _functions.ip()+'-'+new Date().valueOf().toString(36)+'-'+Math.floor(Math.random()*1000000000).toString(36)+'-'+Math.floor(Math.random()*1000000000).toString(36);
 		},
 		sessionId	: function() {
 			var ssid	= false;
-			ssid	= _config.ssid || req.cookie(_config.cookieName) || req.cookie(_config.cookieName, { secure: true }) /*|| req.getVars().ssid*/ || "";
-			// console.log(
-			// 	"sessionId:: ",
-			// 	ssid,
-			// 	"\n",
-			// 	req.cookies.get(_config.cookieName, { secure: true }),
-			// 	"\n",
-			// 	req.cookies.get(_config.cookieName)
-			// );
+			ssid	= _config.ssid || req.cookie(_config.cookieName, { secure: false }) || req.cookie(_config.cookieName, { secure: true }) /*|| req.getVars().ssid*/ || "";
+
 			if( !ssid ) {
 				ssid	= _functions.hashSession(_functions.genSessionId());
 				_config.ssid	= ssid;
@@ -119,12 +114,24 @@ module.exports	= function( req, res, app, options ) {
 					httpOnly	: false,
 					overwrite	: true,
 					signed		: false,
-					expire		: new Date( new Date().valueOf() + _sessionsLife * 1000 )
+					path		: "/",
+					overwrite   : true,
+					expires		: new Date( new Date().valueOf() + _sessionsLife * 1000 ),
+					maxAge		: new Date( new Date().valueOf() + _sessionsLife * 1000 ).valueOf()
 				};
+
 				if( _config.cookieDomain )
 					o.domain	= _config.cookieDomain;
-				res.cookie( _config.cookieName, ssid, o );
-				console.log(_config.cookieName, ssid, o, req.headers);
+
+				if (ssid && typeof(res.cookie) === "function") {
+					res.cookie( _config.cookieName, ssid, o );
+
+					if (req.isHttps) {
+						o.secure = true;
+
+						res.cookie( _config.cookieName, ssid, o );
+					}
+				}
 			}
 			if( !( ssid in _sessions ) ) {
 				var t = new Date().valueOf();

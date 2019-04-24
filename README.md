@@ -18,6 +18,11 @@ Fast and simple MCV in nodejs
 	app.sessionCookieName("ssid");
 	app.sessionDynCookieName("ssid");
 	app.sessionDynCookieDomain(false);
+
+	// from request.secretCookieKey it reads secret key for decoding cookie
+
+
+
 	app.sessionDynAutoUpdate(true);
 	app.sessionDynExpire(60*60*2);
 
@@ -316,88 +321,6 @@ module.exports	= {
 		}
 	}
 }
-```
-
-#### request.session
-
-To store or access session data, simply use the request property `request.session`,
-which is (generally) serialized as JSON by the store, so nested objects
-are typically fine. For example below is a user-specific view counter:
-
-> more info on [session documentation](https://github.com/expressjs/session)
-
-
-#### request.session.regenerate()
-
-To regenerate the session simply invoke the method, once complete
-a new SID and `Session` instance will be initialized at `request.session`.
-
-```js
-	request.session.regenerate(function(err) {
-		// will have a new session here
-	})
-```
-
-#### request.session.destroy()
-
-Destroys the session, removing `request.session`, will be re-generated next request.
-
-```js
-	request.session.destroy(function(err) {
-		// cannot access session here
-	})
-```
-
-#### request.session.reload()
-
-Reloads the session data.
-
-```js
-	request.session.reload(function(err) {
-		// session updated
-	})
-```
-
-#### request.session.save()
-
-```js
-	request.session.save(function(err) {
-		// session saved
-	})
-```
-
-#### request.session.touch()
-
-Updates the `.maxAge` property. Typically this is
-not necessary to call, as the session middleware does this for you.
-
-#### request.session.cookie
-
-Each session has a unique cookie object accompany it. This allows
-you to alter the session cookie per visitor. For example we can
-set `request.session.cookie.expires` to `false` to enable the cookie
-to remain for only the duration of the user-agent.
-
-#### request.session.cookie.maxAge
-
-Alternatively `request.session.cookie.maxAge` will return the time
-remaining in milliseconds, which we may also re-assign a new value
-to adjust the `.expires` property appropriately. The following
-are essentially equivalent
-
-```js
-var hour = 3600000
-request.session.cookie.expires = new Date(Date.now() + hour)
-request.session.cookie.maxAge = hour
-```
-
-For example when `maxAge` is set to `60000` (one minute), and 30 seconds
-has elapsed it will return `30000` until the current request has completed,
-at which time `request.session.touch()` is called to reset `request.session.maxAge`
-to its original value.
-
-```js
-request.session.cookie.maxAge // => 30000
 ```
 
 ### SessionDyn `request.sessionDyn`
