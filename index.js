@@ -30,6 +30,7 @@ var appBuilder	= function () {
 
 var extendResponseRequest	= function (res, req) {
 	var request	= req;
+	var response	= res;
 
 	if (!request.headers) request.headers = {};
 	if (!response.headers) response.headers = {};
