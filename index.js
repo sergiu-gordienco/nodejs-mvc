@@ -31,6 +31,45 @@ var appBuilder	= function () {
 var extendResponseRequest	= function (res, req) {
 	var request	= req;
 
+	if (!request.headers) request.headers = {};
+	if (!response.headers) response.headers = {};
+
+	if (typeof(request.getHeaders) !== "function") {
+		request.getHeaders = function () {
+			return request.headers;
+		}
+	};
+	if (typeof(request.getHeader) !== "function") {
+		request.getHeader = function (name) {
+			name = name.toLowerCase();
+			return (request.headers || [])[name] || ( name === "cookie" ? [] : '' );
+		}
+	};
+	if (typeof(request.setHeader) !== "function") {
+		request.setHeader = function (name, val) {
+			name = name.toLowerCase();
+			request.headers[name] = val;
+		}
+	};
+
+
+	if (typeof(response.getHeaders) !== "function") {
+		response.getHeaders = function () {
+			return response.headers;
+		}
+	};
+	if (typeof(response.getHeader) !== "function") {
+		response.getHeader = function (name) {
+			name = name.toLowerCase();
+			return (response.headers || [])[name] || ( name === "set-cookie" ? [] : '' );
+		}
+	};
+	if (typeof(response.setHeader) !== "function") {
+		response.setHeader = function (name, val) {
+			name = name.toLowerCase();
+			response.headers[name] = val;
+		}
+	};
 
 	request.cookieManager	= request.cookieManager || new _classes.cookies(request, res, (
 		request.secretCookieKey ? {
