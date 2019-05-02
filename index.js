@@ -6,6 +6,11 @@
 
 var http_statuses   = require(__dirname + "/objects/http_statuses.js");
 var parseParams     = require("application-prototype/constructors/request/params-parser");
+var mrequire        = require("module-require");
+
+mrequire('cookies', __dirname + '/thirdparty-modules/cookies');
+
+
 var appBuilder	= function () {
 
 	var _classes	= {
@@ -23,7 +28,7 @@ var appBuilder	= function () {
 			}
 			return a;
 		},
-		cookies	: require('cookies'),
+		cookies	: mrequire('cookies'),
 		extensions		: require(__dirname+"/objects/extensions.js")
 	};
 
