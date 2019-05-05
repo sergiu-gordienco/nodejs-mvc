@@ -77,18 +77,6 @@ var extendResponseRequest	= function (res, req) {
 		}
 	};
 
-	if (typeof(response.connection) !== "undefined") {
-		response.connection = {
-			// encrypted : undefined
-		};
-	};
-	if (typeof(request.connection) !== "undefined") {
-		request.connection = {
-			// encrypted : undefined
-		};
-	};
-
-
 	request.cookieManager	= request.cookieManager || new _classes.cookies(request, res, (
 		request.secretCookieKey ? {
 			// TODO encode cookie keys correctly
