@@ -21,23 +21,38 @@ app.runBootstrap();
 
 
 app.use('/test', function (req, res, next) {
-	res.write("IP "+(req.connection.remoteAddress)+"\n");
-	next();
+	res.write("IP "+(req.connection.remoteAddress)+"\n", function (err) {
+		if (err) console.error(err);
+
+		next();
+	});
 });
 app.use('/test', function (req, res, next) {
-	res.write('use-test :: ' + req.url + "\n");
-	next();
+	res.write('use-test :: ' + req.url + "\n", function (err) {
+		if (err) console.error(err);
+
+		next();
+	});
 });
 
 app.get("/test/", function (req, res, next) {
-	res.write("test GET\n");
-	next();
+	res.write("test GET\n", function (err) {
+		if (err) console.error(err);
+
+		next();
+	});
 });
 
 app.post("/test/", function (req, res, next) {
-	res.write("test POST\n"+JSON.stringify(req.postVars()));
-	res.write("\n\ntest Files\n"+JSON.stringify(req.fileVars()));
-	next();
+	res.write(
+		"test POST\n"
+		+ JSON.stringify(req.postVars())
+		+ "\n\ntest Files\n"
+		+ JSON.stringify(req.fileVars()), function (err) {
+		if (err) console.error(err);
+
+		next();
+	});
 });
 
 app.all("/test/", function (req, res, next) {

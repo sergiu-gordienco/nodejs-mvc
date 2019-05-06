@@ -50,7 +50,12 @@ module.exports	= function( controllerName, options, appInstance ) {
 		},
 		render	: function( response, viewName, options ) {
 			if( _viewer && appInstance._functions.isValidIdentifier( viewName ) && controllerObject.viewExists( viewName ) ) {
-				_viewer.render( response, controllerObject.getView( viewName ), options );
+				var err;
+				try {
+					_viewer.render( response, controllerObject.getView( viewName ), options );
+				} catch (err) {
+					console.error(err);
+				}
 			}
 		},
 		removeView	: function( viewName ) {

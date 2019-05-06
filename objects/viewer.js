@@ -56,8 +56,10 @@ var buildViewer	= function () {
 						response.set('Content-Type', 'text/html; charset=utf-8');
 					}
 					if (!response.finished) {
-						response.write(html);
-						response.end();
+						response.write(html, function (err) {
+							if (err) console.error(err);
+							response.end();
+						});
 					} else {
 						console.log("Write Response but it is Finished", getStackTrace());
 					}
@@ -67,8 +69,10 @@ var buildViewer	= function () {
 					response.set('Content-Type', 'text/html; charset=utf-8');
 				}
 				if (!response.finished) {
-					response.write(_classes.fs.readFileSync( view.path ));
-					response.end();
+					response.write(_classes.fs.readFileSync( view.path ), function (err) {
+						if (err) console.error(err);
+						response.end();
+					});
 				} else {
 					console.log("Write Response but it is Finished", getStackTrace());
 				}

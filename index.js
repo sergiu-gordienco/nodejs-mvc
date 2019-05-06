@@ -608,29 +608,43 @@ var extendResponseRequest	= function (res, req) {
 				if (!res.headersSent)
 					res.set('Content-Type', 'text/plain');
 			}
-			res.write(data);
-			res.end();
+
+			res.write(data, function (err) {
+				if (err) console.error(err);
+				res.end();
+			});
 		} if (data instanceof Buffer) {
 			if (!res.headersSent)
 				res.set('Content-Type', 'application/octet-stream');
-			res.write(data);
-			res.end();
+
+			res.write(data, function (err) {
+				if (err) console.error(err);
+				res.end();
+			});
 		} else if (Array.isArray(data) || typeof(data) === "object") {
 			if (!res.headersSent)
 				res.set('Content-Type', 'application/json');
-			res.write(JSON.stringify(data));
-			res.end();
+
+			res.write(JSON.stringify(data), function (err) {
+				if (err) console.error(err);
+				res.end();
+			});
 		} else {
 			if (!res.headersSent)
 				res.set('Content-Type', 'application/octet-stream');
-			res.write((data.toString ? data.toString() : (data + '')));
-			res.end();
+
+			res.write((data.toString ? data.toString() : (data + '')), function (err) {
+				if (err) console.error(err);
+				res.end();
+			});
 		}
 	};
 	res.sendStatus	= function (code) {
 		res.statusCode = code;
-		res.write(http_statuses[code] || (code + ''));
-		res.end();
+		res.write(http_statuses[code] || (code + ''), function (err) {
+			if (err) console.error(err);
+			res.end();
+		});
 		return res;
 	};
 	res.sendFile	= function (path, options, callback) {

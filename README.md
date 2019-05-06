@@ -312,9 +312,10 @@ module.exports	= {
 		if (sess.views) {
 			sess.views++
 			response.setHeader('Content-Type', 'text/html')
-			response.write('<p>views: ' + sess.views + '</p>')
-			response.write('<p>expires in: ' + (sess.cookie.maxAge / 1000) + 's</p>')
-			response.end()
+			response.write('<p>views: ' + sess.views + '</p><p>expires in: ' + (sess.cookie.maxAge / 1000) + 's</p>', function (err) {
+				if (err) console.error(err);
+				response.end();
+			});
 		} else {
 		sess.views = 1
 			response.end('welcome to the session demo. refresh!')
