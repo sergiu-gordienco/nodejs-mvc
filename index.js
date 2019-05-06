@@ -7,7 +7,7 @@
 var http_statuses   = require(__dirname + "/objects/http_statuses.js");
 var parseParams     = require("application-prototype/constructors/request/params-parser");
 var mrequire        = require("module-require");
-var BusBoy          = require("busboy");
+var Busboy          = require("busboy");
 
 mrequire('cookies', __dirname + '/thirdparty-modules/cookies');
 
