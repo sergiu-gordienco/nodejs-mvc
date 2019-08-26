@@ -614,7 +614,7 @@ var extendResponseRequest	= function (res, req) {
 				if (err) console.error(err);
 				res.end();
 			});
-		} if (data instanceof Buffer) {
+		} else if (data instanceof Buffer) {
 			if (!res.headersSent)
 				res.set('Content-Type', 'application/octet-stream');
 
