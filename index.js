@@ -537,6 +537,9 @@ var extendResponseRequest	= function (res, req) {
 	res.staticResource	= function (filePath, fileName, callback, req) {
 		var er, err;
 		try {
+			filePath = decodeURIComponent(filePath);
+		} catch (err) {}
+		try {
 			_classes.fs.stat(filePath, function (err, stat) {
 				if (err) {
 					appInstance._events.onError(err, { res: res, status : 500, end : true });
@@ -746,6 +749,9 @@ var _config	= {
 		var url	= request.url.replace(/[\x23\?][\s\S]*$/, '');
 		var app = request.app ? request.app() : moduleObject;
 		var fpath = (path || app.getPublicPath()) + ( path ? url : app.getMountUpdateUrl(url) );
+		try {
+			fpath = decodeURIComponent(fpath);
+		} catch (err) {}
 		_classes.fs.stat(fpath, function (err, stat) {
 			if (err) {
 				if (callback) {
