@@ -33,6 +33,7 @@ var appBuilder	= function () {
 		extensions		: require(__dirname+"/objects/extensions.js")
 	};
 
+	var _cachedParsedParamsRoutes = {};
 
 var extendResponseRequest	= function (res, req) {
 	var request	= req;
@@ -133,7 +134,7 @@ var extendResponseRequest	= function (res, req) {
 			let items = request._cachedParams.map(v => v);
 			// console.log(request.url, request._currentRoute);
 			if (typeof(request._currentRoute) === "string") {
-				let parsedParams = parseParams(request.url, request._currentRoute);
+				let parsedParams = parseParams(request.url, request._currentRoute, { cache: _cachedParsedParamsRoutes });
 				if (parsedParams !== null && typeof(parsedParams) === "object") {
 					let param;
 					for (param in parsedParams) {
@@ -1162,7 +1163,7 @@ var _config	= {
 					rt	= rt.replace(/\/+$/, '');
 				}
 				if (typeof(rt) === "string") {
-					if (parseParams(url, rt) !== null) {
+					if (parseParams(url, rt, { cache: _cachedParsedParamsRoutes }) !== null) {
 						return true;
 					} else {
 						c	= url[rt.length];
